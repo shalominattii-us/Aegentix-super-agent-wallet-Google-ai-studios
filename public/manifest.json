@@ -1,0 +1,23 @@
+{
+  "short_name": "Aegentix",
+  "name": "Aegentix Super Agent Wallet",
+  "description": "Autonomous dual-exchange agent wallet bridging CEX and DEX with real-time market research, automated signal generation, compliance verification, and execution.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#080B10",
+  "theme_color": "#080B10",
+  "display": "standalone",
+  "orientation": "any",
+  "categories": [
+    "finance",
+    "productivity",
+    "utilities",
+    "business"
+  ]
+}

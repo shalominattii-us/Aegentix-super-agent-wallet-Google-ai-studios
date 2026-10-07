@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#080B10" />
+
+    <!-- Suppression of Vite HMR dev websocket disconnect notices in sandboxed cloud iFrames -->
+    <script>
+      window.addEventListener('unhandledrejection', function(event) {
+        if (event && event.reason && (
+          String(event.reason).includes('WebSocket') || 
+          String(event.reason?.message || '').includes('WebSocket') ||
+          String(event.reason).includes('vite')
+        )) {
+          event.preventDefault();
+        }
+      });
+      window.addEventListener('error', function(event) {
+        if (event && event.message && (
+          event.message.includes('WebSocket') || 
+          event.message.includes('vite')
+        )) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <!-- Primary Title & Meta SEO -->
+    <title>Aegentix Super Agent Wallet</title>
+    <meta name="description" content="Autonomous dual-exchange agent wallet bridging CEX and DEX with real-time market research, automated signal generation, compliance verification, and execution." />
+    <meta name="keywords" content="Aegentix, Super Agent Wallet, autonomous AI agent, crypto arbitrage, DEX CEX bridge, sovereign OS, fedramp, SAM.gov, post-quantum cryptography, Kyber-1024, Herdr cluster, CYBERCORE, OODA loop, algorithmic trading" />
+    <meta name="author" content="Aegentix Super Agent Core &amp; Sovereign Operations" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- OpenGraph Social Metadata -->
+    <meta property="og:site_name" content="Aegentix Super Agent Wallet" />
+    <meta property="og:title" content="Aegentix Super Agent Wallet" />
+    <meta property="og:description" content="Autonomous dual-exchange agent wallet bridging CEX and DEX with real-time market research, automated signal generation, compliance verification, and execution." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="/favicon.svg" />
+
+    <!-- Twitter / X Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Aegentix Super Agent Wallet" />
+    <meta name="twitter:description" content="Autonomous dual-exchange agent wallet bridging CEX and DEX with real-time market research, automated signal generation, compliance verification, and execution." />
+    <meta name="twitter:image" content="/favicon.svg" />
+    <meta name="twitter:site" content="@shalominattii" />
+    <meta name="twitter:creator" content="@shalominattii" />
+
+    <!-- Apple Web App & Mobile Meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Aegentix" />
+
+    <!-- Schema.org JSON-LD Structured Data (WebApplication) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Aegentix Super Agent Wallet",
+      "alternateName": ["Aegentix Sovereign OS", "CYBERCORE Agent Wallet"],
+      "applicationCategory": "FinanceApplication, SecurityApplication",
+      "operatingSystem": "Web, Linux, Cloud Run, ROG Ally X CCA",
+      "description": "Autonomous dual-exchange agent wallet bridging CEX and DEX with real-time market research, automated signal generation, compliance verification, and execution.",
+      "softwareVersion": "3.8.4-sovereign",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Autonomous OODA Loop Cycle with Millisecond Latency Triage",
+        "Dual-Exchange Arbitrage Engine bridging DEX (Uniswap) & CEX (Binance.US/Coinbase)",
+        "Post-Quantum Cryptographic Verification with ML-KEM/Kyber-1024",
+        "Federal SAM.gov & FedRAMP High Compliance Block Hash Chain",
+        "Herdr P2P Agent Mesh Clustering with mTLS Discovery",
+        "Institutional Risk Dashboard with Monte Carlo VaR Simulation",
+        "Meta-Cognitive Reflexive Introspector & Recursive Evaluation"
+      ]
+    }
+    </script>
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#080B10] text-slate-200 antialiased overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

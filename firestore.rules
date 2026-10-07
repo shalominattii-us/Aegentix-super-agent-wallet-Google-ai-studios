@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable Hardened Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Validation Blueprint for User Profiles
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'lastLoginAt', 'moltbookHandle']) &&
+             data.uid is string && data.uid.size() <= 128 && data.uid == request.auth.uid &&
+             data.email is string && data.email.size() <= 256;
+    }
+
+    // Validation Blueprint for AI Ability Records
+    function isValidAbilityRecord(data) {
+      return data.keys().hasAll(['type', 'title', 'createdAt']) &&
+             data.type is string && data.type.size() <= 64 &&
+             data.title is string && data.title.size() <= 512 &&
+             data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    // Validation Blueprint for Chat Messages
+    function isValidChatMessage(data) {
+      return data.keys().hasAll(['role', 'text', 'timestamp']) &&
+             data.role in ['user', 'model', 'system'] &&
+             data.text is string && data.text.size() <= 10000 &&
+             data.timestamp is string && data.timestamp.size() <= 64;
+    }
+
+    // Boot-time connectivity test path
+    match /test/{docId} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    // User Accounts & Data Isolated per UID
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId) && isOwner(userId) && isValidUser(incoming());
+      allow update: if isValidId(userId) && isOwner(userId) && isValidUser(incoming()) && incoming().uid == existing().uid;
+      allow delete: if false;
+
+      // User's AI Ability History
+      match /abilities_history/{recordId} {
+        allow get: if isValidId(recordId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(recordId) && isOwner(userId) && isValidAbilityRecord(incoming());
+        allow update: if isValidId(recordId) && isOwner(userId) && isValidAbilityRecord(incoming());
+        allow delete: if isValidId(recordId) && isOwner(userId);
+      }
+
+      // User's Chat Messages
+      match /chat_messages/{messageId} {
+        allow get: if isValidId(messageId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(messageId) && isOwner(userId) && isValidChatMessage(incoming());
+        allow update: if false;
+        allow delete: if isValidId(messageId) && isOwner(userId);
+      }
+    }
+  }
+}

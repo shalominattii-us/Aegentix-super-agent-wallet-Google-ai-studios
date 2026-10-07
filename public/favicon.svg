@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="cyberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="50%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E131F" />
+      <stop offset="100%" stop-color="#05080E" />
+    </linearGradient>
+  </defs>
+  <!-- Background Shield Outline -->
+  <polygon points="32,4 58,16 58,38 32,60 6,38 6,16" fill="url(#shieldGrad)" stroke="url(#cyberGrad)" stroke-width="2.5" />
+  
+  <!-- Cyber Circuit Nodes -->
+  <circle cx="32" cy="18" r="3" fill="#00F0FF" />
+  <circle cx="18" cy="34" r="2.5" fill="#3B82F6" />
+  <circle cx="46" cy="34" r="2.5" fill="#8B5CF6" />
+  <circle cx="32" cy="46" r="3" fill="#10B981" />
+  
+  <!-- Connecting Hexagon Tracer Lines -->
+  <line x1="32" y1="18" x2="18" y2="34" stroke="#00F0FF" stroke-width="1.5" stroke-opacity="0.8" />
+  <line x1="32" y1="18" x2="46" y2="34" stroke="#00F0FF" stroke-width="1.5" stroke-opacity="0.8" />
+  <line x1="18" y1="34" x2="32" y2="46" stroke="#10B981" stroke-width="1.5" stroke-opacity="0.8" />
+  <line x1="46" y1="34" x2="32" y2="46" stroke="#10B981" stroke-width="1.5" stroke-opacity="0.8" />
+  <line x1="18" y1="34" x2="46" y2="34" stroke="#3B82F6" stroke-width="1" stroke-dasharray="2 2" stroke-opacity="0.6" />
+  
+  <!-- Central Sovereign Core Symbol -->
+  <polygon points="32,24 40,34 32,40 24,34" fill="url(#cyberGrad)" opacity="0.9" />
+  <circle cx="32" cy="32" r="2" fill="#FFFFFF" />
+</svg>

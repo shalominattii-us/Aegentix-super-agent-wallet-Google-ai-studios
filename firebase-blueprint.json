@@ -1,0 +1,68 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Authenticated user profile in the Sovereign System",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 1024 },
+        "lastLoginAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email"]
+    },
+    "AbilityRecord": {
+      "title": "AbilityRecord",
+      "description": "Record of generated AI ability or tool execution",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 512 },
+        "resultUrl": { "type": "string", "maxLength": 2048 },
+        "content": { "type": "string", "maxLength": 10000 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["type", "title", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Conversation message log with AI model",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model", "system"] },
+        "text": { "type": "string", "maxLength": 10000 },
+        "model": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["role", "text", "timestamp"]
+    },
+    "ConnectionTest": {
+      "title": "ConnectionTest",
+      "description": "Diagnostic document used to verify Firestore connectivity on boot",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "maxLength": 32 }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile collection indexed by Firebase Auth UID"
+    },
+    "/users/{userId}/abilities_history/{recordId}": {
+      "schema": { "$ref": "#/entities/AbilityRecord" },
+      "description": "User history of AI abilities and tool generations"
+    },
+    "/users/{userId}/chat_messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Chat log history per authenticated user"
+    },
+    "/test/{docId}": {
+      "schema": { "$ref": "#/entities/ConnectionTest" },
+      "description": "Connectivity test path"
+    }
+  }
+}
