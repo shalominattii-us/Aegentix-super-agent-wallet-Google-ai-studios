@@ -45,6 +45,57 @@
       "properties": {
         "status": { "type": "string", "maxLength": 32 }
       }
+    },
+    "PortfolioGrowthPlan": {
+      "title": "PortfolioGrowthPlan",
+      "description": "Interactive portfolio growth chart configuration and financial targets",
+      "type": "object",
+      "properties": {
+        "planName": { "type": "string", "maxLength": 128 },
+        "initialCapitalUsd": { "type": "number" },
+        "targetMilestoneUsd": { "type": "number" },
+        "monthlyContributionUsd": { "type": "number" },
+        "projectedAprPct": { "type": "number" },
+        "strategyMode": { "type": "string", "maxLength": 64 },
+        "timeHorizonMonths": { "type": "integer" },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["planName", "initialCapitalUsd", "updatedAt"]
+    },
+    "TradingCredential": {
+      "title": "TradingCredential",
+      "description": "Exchange API, FIX session, and Web3 trading credential entry",
+      "type": "object",
+      "properties": {
+        "provider": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "maxLength": 32 },
+        "keyIdentifier": { "type": "string", "maxLength": 256 },
+        "secretMasked": { "type": "string", "maxLength": 128 },
+        "permissions": { "type": "string", "maxLength": 256 },
+        "network": { "type": "string", "maxLength": 64 },
+        "lastTestedAt": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["provider", "name", "type", "status", "createdAt"]
+    },
+    "CyberGymCredential": {
+      "title": "CyberGymCredential",
+      "description": "CyberGym certified athlete, research grant, or compliance credential passport",
+      "type": "object",
+      "properties": {
+        "athleteOrEntity": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "category": { "type": "string", "maxLength": 64 },
+        "tier": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "maxLength": 32 },
+        "credentialHash": { "type": "string", "maxLength": 256 },
+        "verifierSignature": { "type": "string", "maxLength": 512 },
+        "issuedAt": { "type": "string", "maxLength": 64 },
+        "expiresAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["athleteOrEntity", "title", "category", "status", "issuedAt"]
     }
   },
   "firestore": {
@@ -59,6 +110,18 @@
     "/users/{userId}/chat_messages/{messageId}": {
       "schema": { "$ref": "#/entities/ChatMessage" },
       "description": "Chat log history per authenticated user"
+    },
+    "/users/{userId}/portfolio_plans/{planId}": {
+      "schema": { "$ref": "#/entities/PortfolioGrowthPlan" },
+      "description": "User custom portfolio growth plan and milestone configurations"
+    },
+    "/users/{userId}/trading_credentials/{credentialId}": {
+      "schema": { "$ref": "#/entities/TradingCredential" },
+      "description": "User trading credentials across CEX, DEX, and FIX protocol"
+    },
+    "/users/{userId}/cybergym_credentials/{credentialId}": {
+      "schema": { "$ref": "#/entities/CyberGymCredential" },
+      "description": "User CyberGym digital athlete credentials and compliance passports"
     },
     "/test/{docId}": {
       "schema": { "$ref": "#/entities/ConnectionTest" },

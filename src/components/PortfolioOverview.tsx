@@ -5,11 +5,13 @@ import { WalletBalances } from '../types';
 interface PortfolioOverviewProps {
   balances: WalletBalances;
   onQuickRebalance: (symbol: string) => void;
+  onOpenGrowthPlan?: () => void;
 }
 
 export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
   balances,
   onQuickRebalance,
+  onOpenGrowthPlan,
 }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'1H' | '24H' | '7D' | '30D' | 'ALL'>('24H');
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -76,21 +78,34 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
           </div>
         </div>
 
-        {/* Timeframe selector */}
-        <div className="flex items-center gap-1 p-1 bg-slate-900 rounded border border-slate-800 self-start">
-          {(['1H', '24H', '7D', '30D', 'ALL'] as const).map((tf) => (
+        {/* Controls: Timeframe selector and Growth Plan link */}
+        <div className="flex items-center gap-2 self-start flex-wrap">
+          {onOpenGrowthPlan && (
             <button
-              key={tf}
-              onClick={() => setSelectedTimeframe(tf)}
-              className={`px-2.5 py-1 text-[11px] rounded transition-colors ${
-                selectedTimeframe === tf
-                  ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              onClick={onOpenGrowthPlan}
+              className="px-2.5 py-1 text-[11px] font-bold rounded bg-gradient-to-r from-cyan-950 to-slate-900 hover:from-cyan-900 hover:to-slate-800 text-cyan-300 border border-cyan-500/40 hover:border-cyan-400 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              title="Open full interactive Portfolio Growth Chart Plan with all trading and cyber gym credentials"
             >
-              {tf}
+              <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Growth Plan &amp; Credentials</span>
             </button>
-          ))}
+          )}
+
+          <div className="flex items-center gap-1 p-1 bg-slate-900 rounded border border-slate-800">
+            {(['1H', '24H', '7D', '30D', 'ALL'] as const).map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setSelectedTimeframe(tf)}
+                className={`px-2.5 py-1 text-[11px] rounded transition-colors ${
+                  selectedTimeframe === tf
+                    ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

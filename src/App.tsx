@@ -48,6 +48,7 @@ import { SpaceBunnyAlphaSuite } from './components/SpaceBunnyAlphaSuite';
 import { DesktopDeviceMappingSuite } from './components/DesktopDeviceMappingSuite';
 import { KolibriOfflineSuite } from './components/KolibriOfflineSuite';
 import { CyberGymProgressionSuite } from './components/CyberGymProgressionSuite';
+import { PortfolioGrowthPlanSuite } from './components/PortfolioGrowthPlanSuite';
 import { 
   WalletBalances, 
   MarketAsset, 
@@ -138,7 +139,7 @@ export default function App() {
   const [isStressTesting, setIsStressTesting] = useState(false);
   const [isPulsingHeartbeat, setIsPulsingHeartbeat] = useState(false);
   const [oodaState, setOodaState] = useState<OodaTelemetryState | null>(null);
-  const [centerTab, setCenterTab] = useState<'LIVE_TELEMETRY' | 'AEGENTIS_OS' | 'HERDR' | 'ROG_CREATOR_SYSTEM' | 'DEVICE_SANDBOX_MAPPING' | 'CYBERNETICS' | 'AEGIS_CIPHER' | 'ENDPOINT_SECURITY' | 'OODA_LOOP' | 'TOP_SIGNALS' | 'SYMPHONY' | 'AGENT_MESH' | 'AUTOHEDGE' | 'RISK_DASHBOARD' | 'GOOGLE_DRIVE' | 'GMAIL' | 'HEATMAP' | 'MOLTBOOK' | 'RESEARCHER' | 'META_COGNITIVE' | 'SPACE_BUNNY_ALPHA' | 'ALL_FEEDS' | 'LEDGER' | 'HALO_CE_VISOR' | 'USER_PROFILE_MAP' | 'AGENTS_OF_CHAOS' | 'SOVEREIGN_COMMAND' | 'FAA_SOV_LICENSE' | 'SOVEREIGN_PORTAL' | 'OMNICYBERDEX' | 'HEALTHCARE_NET' | 'FEDERAL_CRYPTO' | 'TRADING_COMMAND' | 'DAG_FEDERAL_NODE_STATUS' | 'GOV_OPPORTUNITIES' | 'AGENTIC_AMERICA' | 'CYBERGYM_PROGRESSION' | 'GITHUB_FORGE' | 'KOLIBRI_PLATFORM'>('LIVE_TELEMETRY');
+  const [centerTab, setCenterTab] = useState<'LIVE_TELEMETRY' | 'AEGENTIS_OS' | 'HERDR' | 'ROG_CREATOR_SYSTEM' | 'DEVICE_SANDBOX_MAPPING' | 'CYBERNETICS' | 'AEGIS_CIPHER' | 'ENDPOINT_SECURITY' | 'OODA_LOOP' | 'TOP_SIGNALS' | 'SYMPHONY' | 'AGENT_MESH' | 'AUTOHEDGE' | 'RISK_DASHBOARD' | 'GOOGLE_DRIVE' | 'GMAIL' | 'HEATMAP' | 'MOLTBOOK' | 'RESEARCHER' | 'META_COGNITIVE' | 'SPACE_BUNNY_ALPHA' | 'ALL_FEEDS' | 'LEDGER' | 'HALO_CE_VISOR' | 'USER_PROFILE_MAP' | 'AGENTS_OF_CHAOS' | 'SOVEREIGN_COMMAND' | 'FAA_SOV_LICENSE' | 'SOVEREIGN_PORTAL' | 'OMNICYBERDEX' | 'HEALTHCARE_NET' | 'FEDERAL_CRYPTO' | 'TRADING_COMMAND' | 'PORTFOLIO_GROWTH_PLAN' | 'DAG_FEDERAL_NODE_STATUS' | 'GOV_OPPORTUNITIES' | 'AGENTIC_AMERICA' | 'CYBERGYM_PROGRESSION' | 'GITHUB_FORGE' | 'KOLIBRI_PLATFORM'>('LIVE_TELEMETRY');
   const [alertBanner, setAlertBanner] = useState<{ message: string; type: 'ALERT' | 'SUCCESS' | 'INFO' } | null>(null);
 
   const [connectedWallet, setConnectedWallet] = useState<{ address: string; type: string } | null>({
@@ -504,6 +505,7 @@ export default function App() {
             <PortfolioOverview
               balances={balances}
               onQuickRebalance={handleQuickRebalance}
+              onOpenGrowthPlan={() => setCenterTab('PORTFOLIO_GROWTH_PLAN')}
             />
 
             {/* Hierarchical Pillar & Module Workspace Navigator */}
@@ -792,6 +794,20 @@ export default function App() {
               <InstitutionalTradingSuite
                 onNotify={(msg, type) => setAlertBanner({ message: msg, type })}
                 onOpenOmniCyberDex={() => setCenterTab('OMNICYBERDEX')}
+                onOpenGrowthPlan={() => setCenterTab('PORTFOLIO_GROWTH_PLAN')}
+              />
+            )}
+
+            {/* TAB CONTENT: Portfolio Growth Chart Plan with all Trading & CyberGym Credentials */}
+            {centerTab === 'PORTFOLIO_GROWTH_PLAN' && (
+              <PortfolioGrowthPlanSuite
+                currentNetWorthUsd={balances.totalUsd}
+                onNotify={(msg, type) => {
+                  const mappedType = type === 'ALERT' ? 'ALERT' : type === 'WARN' ? 'ALERT' : type === 'SUCCESS' ? 'SUCCESS' : 'INFO';
+                  setAlertBanner({ message: msg, type: mappedType });
+                }}
+                onOpenTradingCommand={() => setCenterTab('TRADING_COMMAND')}
+                onOpenCyberGym={() => setCenterTab('CYBERGYM_PROGRESSION')}
               />
             )}
 
@@ -818,6 +834,7 @@ export default function App() {
                 }}
                 onOpenMesh={() => setCenterTab('AGENT_MESH')}
                 onOpenCompliance={() => setCenterTab('GOV_OPPORTUNITIES')}
+                onOpenGrowthPlan={() => setCenterTab('PORTFOLIO_GROWTH_PLAN')}
               />
             )}
 

@@ -44,11 +44,13 @@ import {
 interface InstitutionalTradingSuiteProps {
   onNotify?: (message: string, type: 'ALERT' | 'SUCCESS' | 'INFO') => void;
   onOpenOmniCyberDex?: () => void;
+  onOpenGrowthPlan?: () => void;
 }
 
 export const InstitutionalTradingSuite: React.FC<InstitutionalTradingSuiteProps> = ({
   onNotify,
   onOpenOmniCyberDex,
+  onOpenGrowthPlan,
 }) => {
   const [activeTab, setActiveTab] = useState<'PLAYBOOKS' | 'RUNBOOK' | 'QUANT_METHODS' | 'SIGNALS' | 'CONSOLE'>('PLAYBOOKS');
   const [playbooks, setPlaybooks] = useState<InstitutionalPlaybook[]>(INSTITUTIONAL_PLAYBOOKS);
@@ -170,6 +172,16 @@ export const InstitutionalTradingSuite: React.FC<InstitutionalTradingSuiteProps>
             <span className="text-[10px] text-slate-400">DAG Throughput:</span>
             <span className="font-bold text-indigo-300 font-sans">{activeTps.toLocaleString()} TPS</span>
           </div>
+          {onOpenGrowthPlan && (
+            <button
+              onClick={onOpenGrowthPlan}
+              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-950 to-purple-950 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              title="Open Portfolio Growth Plan with all Trading & CyberGym credentials"
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Growth Plan &amp; Keys</span>
+            </button>
+          )}
         </div>
       </div>
 

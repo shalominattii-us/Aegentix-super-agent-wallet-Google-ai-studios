@@ -44,12 +44,14 @@ interface CyberGymProgressionSuiteProps {
   onNotify?: (message: string, type: 'INFO' | 'SUCCESS' | 'WARN' | 'ALERT') => void;
   onOpenMesh?: () => void;
   onOpenCompliance?: () => void;
+  onOpenGrowthPlan?: () => void;
 }
 
 export const CyberGymProgressionSuite: React.FC<CyberGymProgressionSuiteProps> = ({
   onNotify,
   onOpenMesh,
   onOpenCompliance,
+  onOpenGrowthPlan,
 }) => {
   // Navigation & filtering state
   const [activeView, setActiveView] = useState<'ACHIEVEMENTS' | 'LINEAGE_GRAPH' | 'VERIFICATION_ENGINE' | 'SCHEMA_ARCH' | 'NSF_DOSSIER'>('ACHIEVEMENTS');
@@ -270,6 +272,17 @@ ${simulatedAchievementState.map(ach => `
                 {avgScore}% <span className="text-[10px] text-emerald-400">Omega Pre</span>
               </div>
             </div>
+
+            {onOpenGrowthPlan && (
+              <button
+                onClick={onOpenGrowthPlan}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600/30 to-cyan-600/30 hover:from-emerald-600/40 hover:to-cyan-600/40 text-emerald-300 border border-emerald-500/40 font-semibold cursor-pointer transition-all shadow-sm"
+                title="View complete CyberGym Passports, NIST Certifications, and Portfolio Growth Plan"
+              >
+                <Award className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Credentials Vault</span>
+              </button>
+            )}
 
             <button
               onClick={handleExportNsfDossier}

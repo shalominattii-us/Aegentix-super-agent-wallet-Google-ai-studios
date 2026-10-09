@@ -183,6 +183,15 @@ export const SYSTEM_TOC_ITEMS: TocItem[] = [
 
   // Trading & DEX
   {
+    id: 'PORTFOLIO_GROWTH_PLAN',
+    name: 'Portfolio Growth Chart Plan & Sovereign Credentials',
+    category: 'Trading & DEX',
+    badge: 'Growth Plan + Credentials',
+    badgeColor: 'cyan',
+    icon: TrendingUp,
+    description: 'Deterministic compounding growth model, milestone roadmap, and authorized credentials across all exchanges and CyberGym testbeds.',
+  },
+  {
     id: 'TOP_SIGNALS',
     name: 'Top Alpha Signals Leaderboard',
     category: 'Trading & DEX',

@@ -47,6 +47,34 @@ service cloud.firestore {
              data.timestamp is string && data.timestamp.size() <= 64;
     }
 
+    // Validation Blueprint for Portfolio Growth Plans
+    function isValidPortfolioPlan(data) {
+      return data.keys().hasAll(['planName', 'initialCapitalUsd', 'updatedAt']) &&
+             data.planName is string && data.planName.size() <= 128 &&
+             data.initialCapitalUsd is number &&
+             data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    // Validation Blueprint for Trading Credentials
+    function isValidTradingCredential(data) {
+      return data.keys().hasAll(['provider', 'name', 'type', 'status', 'createdAt']) &&
+             data.provider is string && data.provider.size() <= 64 &&
+             data.name is string && data.name.size() <= 128 &&
+             data.type is string && data.type.size() <= 64 &&
+             data.status is string && data.status.size() <= 32 &&
+             data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    // Validation Blueprint for CyberGym Credentials
+    function isValidCyberGymCredential(data) {
+      return data.keys().hasAll(['athleteOrEntity', 'title', 'category', 'status', 'issuedAt']) &&
+             data.athleteOrEntity is string && data.athleteOrEntity.size() <= 128 &&
+             data.title is string && data.title.size() <= 256 &&
+             data.category is string && data.category.size() <= 64 &&
+             data.status is string && data.status.size() <= 32 &&
+             data.issuedAt is string && data.issuedAt.size() <= 64;
+    }
+
     // Boot-time connectivity test path
     match /test/{docId} {
       allow get: if true;
@@ -77,6 +105,33 @@ service cloud.firestore {
         allow create: if isValidId(messageId) && isOwner(userId) && isValidChatMessage(incoming());
         allow update: if false;
         allow delete: if isValidId(messageId) && isOwner(userId);
+      }
+
+      // User's Portfolio Growth Plans
+      match /portfolio_plans/{planId} {
+        allow get: if isValidId(planId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(planId) && isOwner(userId) && isValidPortfolioPlan(incoming());
+        allow update: if isValidId(planId) && isOwner(userId) && isValidPortfolioPlan(incoming());
+        allow delete: if isValidId(planId) && isOwner(userId);
+      }
+
+      // User's Trading Credentials (Exchange API, FIX, DEX)
+      match /trading_credentials/{credentialId} {
+        allow get: if isValidId(credentialId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(credentialId) && isOwner(userId) && isValidTradingCredential(incoming());
+        allow update: if isValidId(credentialId) && isOwner(userId) && isValidTradingCredential(incoming());
+        allow delete: if isValidId(credentialId) && isOwner(userId);
+      }
+
+      // User's CyberGym Credentials (Passports, Grants, NIST, Badges)
+      match /cybergym_credentials/{credentialId} {
+        allow get: if isValidId(credentialId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(credentialId) && isOwner(userId) && isValidCyberGymCredential(incoming());
+        allow update: if isValidId(credentialId) && isOwner(userId) && isValidCyberGymCredential(incoming());
+        allow delete: if isValidId(credentialId) && isOwner(userId);
       }
     }
   }
