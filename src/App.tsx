@@ -41,6 +41,7 @@ import { PromptTemplateModal } from './components/PromptTemplateModal';
 import { HardwareSignOffModal } from './components/HardwareSignOffModal';
 import { WalletConnectModal } from './components/WalletConnectModal';
 import { TableOfContentsModal } from './components/TableOfContentsModal';
+import { ExportAppModal } from './components/ExportAppModal';
 import { WorkspaceNavigator } from './components/WorkspaceNavigator';
 import { MetaCognitiveEngine } from './components/MetaCognitiveEngine';
 import { SpaceBunnyAlphaSuite } from './components/SpaceBunnyAlphaSuite';
@@ -118,6 +119,7 @@ export default function App() {
   // Modals & UI Controls
   const [isExpandedCanvas, setIsExpandedCanvas] = useState(false);
   const [isTocModalOpen, setIsTocModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isHardwareModalOpen, setIsHardwareModalOpen] = useState(false);
@@ -427,6 +429,7 @@ export default function App() {
         onOpenWalletModal={() => setIsWalletModalOpen(true)}
         onOpenPromptModal={() => setIsPromptModalOpen(true)}
         onOpenTocModal={() => setIsTocModalOpen(true)}
+        onOpenExportModal={() => setIsExportModalOpen(true)}
         onTriggerStressTest={handleStressTest}
         isStressTesting={isStressTesting}
         connectedWallet={connectedWallet}
@@ -903,6 +906,13 @@ export default function App() {
         onClose={() => setIsTocModalOpen(false)}
         activeTab={centerTab}
         onSelectTab={(tabId) => setCenterTab(tabId)}
+      />
+
+      {/* Export Application Codebase Modal */}
+      <ExportAppModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onOpenGitHubForge={() => setCenterTab('GITHUB_FORGE')}
       />
     </div>
   );

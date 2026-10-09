@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Zap, AlertTriangle, Key, Wallet, Sparkles, Globe, BookOpen, Maximize2, Minimize2, Monitor, Mic } from 'lucide-react';
+import { Cpu, ShieldCheck, Zap, AlertTriangle, Key, Wallet, Sparkles, Globe, BookOpen, Maximize2, Minimize2, Monitor, Mic, Download } from 'lucide-react';
 import { SovereignSeal } from './SovereignSeal';
 import { AuthIndicator } from './AuthIndicator';
 import { LLMStatus } from '../types';
@@ -10,6 +10,7 @@ interface HeaderProps {
   onOpenWalletModal: () => void;
   onOpenPromptModal: () => void;
   onOpenTocModal?: () => void;
+  onOpenExportModal?: () => void;
   onTriggerStressTest: () => void;
   isStressTesting: boolean;
   connectedWallet: { address: string; type: string } | null;
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenWalletModal,
   onOpenPromptModal,
   onOpenTocModal,
+  onOpenExportModal,
   onTriggerStressTest,
   isStressTesting,
   connectedWallet,
@@ -128,6 +130,18 @@ export const Header: React.FC<HeaderProps> = ({
             <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
             <span className="hidden sm:inline">Table of Contents</span>
           </button>
+
+          {/* Export Code / Project Bundle */}
+          {onOpenExportModal && (
+            <button
+              onClick={onOpenExportModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-emerald-300 border border-emerald-500/40 rounded text-xs font-mono font-semibold transition-all shadow-sm cursor-pointer"
+              title="Export Full Codebase (Download Archive or Push to GitHub)"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export App</span>
+            </button>
+          )}
 
           {/* Canvas Focus / Triage View Toggle */}
           {onToggleExpandedCanvas && (
