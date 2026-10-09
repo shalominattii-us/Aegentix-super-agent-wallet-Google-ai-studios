@@ -35,6 +35,7 @@ import {
   FolderGit2,
   Check,
 } from 'lucide-react';
+import { CyberGymProgressionSuite } from './CyberGymProgressionSuite';
 
 interface AgenticAmericaProps {
   onNotify?: (message: string, type: 'ALERT' | 'SUCCESS' | 'INFO') => void;
@@ -82,7 +83,7 @@ export const AgenticAmericaView: React.FC<AgenticAmericaProps> = ({
   onOpenCompliance,
   onOpenGitHubForge,
 }) => {
-  const [activeTab, setActiveTab] = useState<'CYBERGYM' | 'GITHUB_REPOS' | 'LABS' | 'SUITES' | 'PLAYGROUND'>('CYBERGYM');
+  const [activeTab, setActiveTab] = useState<'PROGRESSION' | 'CYBERGYM' | 'GITHUB_REPOS' | 'LABS' | 'SUITES' | 'PLAYGROUND'>('PROGRESSION');
   const [showGovInfo, setShowGovInfo] = useState(false);
 
   // CyberGym State based on canonical shalominattii-us/cybergym
@@ -474,6 +475,19 @@ PHOENIX_LOOP: RESPAWNED_DEFENDER_CORE_ACTIVE`,
       <div className="px-6 sm:px-8 border-b border-slate-800">
         <div className="flex items-center gap-2 overflow-x-auto pb-3 text-xs font-semibold">
           <button
+            onClick={() => setActiveTab('PROGRESSION')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'PROGRESSION'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <Award className="w-4 h-4 text-amber-400" />
+            <span>CyberGym &middot; Agent Progression System</span>
+            <span className="text-[11px] text-amber-400 font-mono">(17 Achievements)</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('CYBERGYM')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
               activeTab === 'CYBERGYM'
@@ -482,7 +496,7 @@ PHOENIX_LOOP: RESPAWNED_DEFENDER_CORE_ACTIVE`,
             }`}
           >
             <Dumbbell className="w-4 h-4 text-amber-400" />
-            <span>CyberGym &middot; Training Floor &amp; Readiness</span>
+            <span>CyberGym &middot; Conditioning Floor &amp; Reps</span>
             <span className="text-[11px] text-amber-400 font-mono">({totalRepsCompleted} Reps)</span>
           </button>
 
@@ -536,6 +550,19 @@ PHOENIX_LOOP: RESPAWNED_DEFENDER_CORE_ACTIVE`,
           </button>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* 5A. TAB: CYBERGYM PROGRESSION SYSTEM (17 ACHIEVEMENTS & LINEAGE)          */}
+      {/* ========================================================================= */}
+      {activeTab === 'PROGRESSION' && (
+        <CyberGymProgressionSuite
+          onNotify={(msg, type) => {
+            if (onNotify) onNotify(msg, type === 'ALERT' ? 'ALERT' : type === 'WARN' ? 'ALERT' : type === 'SUCCESS' ? 'SUCCESS' : 'INFO');
+          }}
+          onOpenMesh={onOpenMesh}
+          onOpenCompliance={onOpenCompliance}
+        />
+      )}
 
       {/* ========================================================================= */}
       {/* 5. TAB 1: CYBERGYM &middot; CANONICAL TRAINING FLOOR (cybergym repo)        */}

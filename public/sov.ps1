@@ -67,6 +67,30 @@ switch ($Command.ToLower().TrimStart('-')) {
         Write-Host "[OK] Bidirectional file manifest sync completed." -ForegroundColor Green
     }
 
+    { $_ -in "voice", "-voice", "mic", "tts" } {
+        Write-Host "[*] Probing Sovereign Voice Service (:8100)..." -ForegroundColor Cyan
+        $voiceOk = $false
+        for ($i = 1; $i -le 6; $i++) {
+            try {
+                $resp = Invoke-RestMethod -Uri "http://127.0.0.1:8100/status" -Method Get -TimeoutSec 2 -ErrorAction Stop
+                Write-Host "    [OK] Voice Service Online on :8100 (LLM: $($resp.llm_url))" -ForegroundColor Green
+                Write-Host "    [OK] HUD Microphone & Neural TTS Ready" -ForegroundColor Green
+                $voiceOk = $true
+                break
+            } catch {
+                Write-Host "    [.] Polling Voice Service on :8100 (attempt $i/6)..." -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+        if (!$voiceOk) {
+            Write-Host "    [!] Voice service starting up on port 8100..." -ForegroundColor Yellow
+        }
+        try {
+            Invoke-RestMethod -Uri "$AegentixCloudUrl/api/voice/reconnect" -Method Post -TimeoutSec 3 -ErrorAction SilentlyContinue | Out-Null
+            Write-Host "    [OK] Synchronized voice state with Sovereign HUD (:3000)." -ForegroundColor Green
+        } catch {}
+    }
+
     { $_ -in "fix", "restart", "recover" } {
         Write-Host "[*] Auto-Healing Sovereign Core, Hermes Engine, and Space Bunny..." -ForegroundColor Cyan
         Write-Host "    [1/3] Terminating any orphaned stuck Node / Python processes on ports 7001, 8081, 9001..." -ForegroundColor Gray

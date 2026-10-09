@@ -105,7 +105,7 @@ export const GeminiAbilitiesHub: React.FC<GeminiAbilitiesHubProps> = ({ onNotify
   const [mapsMetadata, setMapsMetadata] = useState<any>(null);
 
   // 6. Gemini Multi-Turn Chatbot state
-  const [chatModel, setChatModel] = useState<'gemini-3.1-pro-preview' | 'gemini-3.5-flash' | 'gemini-3.1-flash-lite'>('gemini-3.5-flash');
+  const [chatModel, setChatModel] = useState<'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.0-flash'>('gemini-2.5-flash');
   const [chatRole, setChatRole] = useState<string>('Sovereign Quantitative Architect');
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -113,7 +113,7 @@ export const GeminiAbilitiesHub: React.FC<GeminiAbilitiesHubProps> = ({ onNotify
       id: 'msg-0',
       role: 'model',
       text: 'Greetings, Operator. I am the Aegentix Sovereign Intelligence Core. How can I assist with your autonomous execution strategies, multi-venue arbitrage models, or risk guardrails today?',
-      model: 'gemini-3.5-flash',
+      model: 'gemini-2.5-flash',
       timestamp: new Date().toLocaleTimeString(),
     },
   ]);
@@ -1205,9 +1205,9 @@ export const GeminiAbilitiesHub: React.FC<GeminiAbilitiesHubProps> = ({ onNotify
                 onChange={(e) => setChatModel(e.target.value as any)}
                 className="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-slate-200 text-xs"
               >
-                <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Complex Tasks)</option>
-                <option value="gemini-3.5-flash">gemini-3.5-flash (General Tasks)</option>
-                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Fast Speed)</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro (Complex Reasoning)</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (High Performance & Default)</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash (Ultra-Fast Speed)</option>
               </select>
             </div>
 

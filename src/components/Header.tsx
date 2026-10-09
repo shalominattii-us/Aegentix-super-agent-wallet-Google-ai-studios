@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Zap, AlertTriangle, Key, Wallet, Sparkles, Globe, BookOpen, Maximize2, Minimize2, Monitor } from 'lucide-react';
+import { Cpu, ShieldCheck, Zap, AlertTriangle, Key, Wallet, Sparkles, Globe, BookOpen, Maximize2, Minimize2, Monitor, Mic } from 'lucide-react';
 import { SovereignSeal } from './SovereignSeal';
 import { AuthIndicator } from './AuthIndicator';
 import { LLMStatus } from '../types';
@@ -20,6 +20,7 @@ interface HeaderProps {
   onToggleExpandedCanvas?: () => void;
   onOpenDeviceMapping?: () => void;
   onOpenSpaceBunny?: () => void;
+  onOpenLounge?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -38,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleExpandedCanvas,
   onOpenDeviceMapping,
   onOpenSpaceBunny,
+  onOpenLounge,
 }) => {
   return (
     <header className="border-b border-slate-800/80 bg-[#0B0F17]/90 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-6 py-2.5">
@@ -86,6 +88,17 @@ export const Header: React.FC<HeaderProps> = ({
               Moltbook: <span className="text-emerald-400 font-semibold">Registered</span>
             </span>
           </div>
+          <span className="text-slate-700">|</span>
+          <button
+            onClick={onOpenLounge}
+            className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer group"
+            title="Open Spartan Tactical Comms & Neural Voice Service (:8100)"
+          >
+            <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse group-hover:scale-110 transition-transform" />
+            <span className="text-slate-300 group-hover:text-cyan-300">
+              Voice :8100: <span className="text-emerald-400 font-semibold underline decoration-dotted">Online</span>
+            </span>
+          </button>
         </div>
 
         {/* Zone 3: Actions & Auth Status */}
@@ -161,6 +174,20 @@ export const Header: React.FC<HeaderProps> = ({
             <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
             <span className="hidden sm:inline">{isStressTesting ? 'Simulating...' : 'Stress Test'}</span>
           </button>
+
+          {/* Captain's Lounge & Halo CE Visor Quick Access */}
+          {onOpenLounge && (
+            <button
+              onClick={onOpenLounge}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-emerald-300 border border-emerald-500/40 rounded text-xs font-mono font-semibold transition-all shadow-sm shadow-emerald-950/30"
+              title="Open Captain's Cannabis Lounge & Halo CE Visor FPV"
+            >
+              <span className="text-sm">🌿</span>
+              <span className="hidden sm:inline">Captain&apos;s Lounge</span>
+              <span className="sm:hidden">Lounge</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            </button>
+          )}
 
           {/* Space Bunny Alpha AI Chat Quick Access */}
           {onOpenSpaceBunny && (

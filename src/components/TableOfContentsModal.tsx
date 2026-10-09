@@ -292,6 +292,15 @@ export const SYSTEM_TOC_ITEMS: TocItem[] = [
     icon: Flag,
     description: 'Digital sovereignty initiative, American technological independence roadmap, and CyberGym sparring drills.',
   },
+  {
+    id: 'CYBERGYM_PROGRESSION',
+    name: 'CyberGym Agent Progression System',
+    category: 'Federal & Gov',
+    badge: '17 Achievements',
+    badgeColor: 'amber',
+    icon: Award,
+    description: 'Measurable capabilities, evidence artifacts, unlockable behaviors, 8-role lineage graph, and 9-stage Gym verification pipeline for NSF research.',
+  },
 
   // Security & Risk
   {

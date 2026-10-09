@@ -46,6 +46,7 @@ import { MetaCognitiveEngine } from './components/MetaCognitiveEngine';
 import { SpaceBunnyAlphaSuite } from './components/SpaceBunnyAlphaSuite';
 import { DesktopDeviceMappingSuite } from './components/DesktopDeviceMappingSuite';
 import { KolibriOfflineSuite } from './components/KolibriOfflineSuite';
+import { CyberGymProgressionSuite } from './components/CyberGymProgressionSuite';
 import { 
   WalletBalances, 
   MarketAsset, 
@@ -135,7 +136,7 @@ export default function App() {
   const [isStressTesting, setIsStressTesting] = useState(false);
   const [isPulsingHeartbeat, setIsPulsingHeartbeat] = useState(false);
   const [oodaState, setOodaState] = useState<OodaTelemetryState | null>(null);
-  const [centerTab, setCenterTab] = useState<'LIVE_TELEMETRY' | 'AEGENTIS_OS' | 'HERDR' | 'ROG_CREATOR_SYSTEM' | 'DEVICE_SANDBOX_MAPPING' | 'CYBERNETICS' | 'AEGIS_CIPHER' | 'ENDPOINT_SECURITY' | 'OODA_LOOP' | 'TOP_SIGNALS' | 'SYMPHONY' | 'AGENT_MESH' | 'AUTOHEDGE' | 'RISK_DASHBOARD' | 'GOOGLE_DRIVE' | 'GMAIL' | 'HEATMAP' | 'MOLTBOOK' | 'RESEARCHER' | 'META_COGNITIVE' | 'SPACE_BUNNY_ALPHA' | 'ALL_FEEDS' | 'LEDGER' | 'HALO_CE_VISOR' | 'USER_PROFILE_MAP' | 'AGENTS_OF_CHAOS' | 'SOVEREIGN_COMMAND' | 'FAA_SOV_LICENSE' | 'SOVEREIGN_PORTAL' | 'OMNICYBERDEX' | 'HEALTHCARE_NET' | 'FEDERAL_CRYPTO' | 'TRADING_COMMAND' | 'DAG_FEDERAL_NODE_STATUS' | 'GOV_OPPORTUNITIES' | 'AGENTIC_AMERICA' | 'GITHUB_FORGE' | 'KOLIBRI_PLATFORM'>('LIVE_TELEMETRY');
+  const [centerTab, setCenterTab] = useState<'LIVE_TELEMETRY' | 'AEGENTIS_OS' | 'HERDR' | 'ROG_CREATOR_SYSTEM' | 'DEVICE_SANDBOX_MAPPING' | 'CYBERNETICS' | 'AEGIS_CIPHER' | 'ENDPOINT_SECURITY' | 'OODA_LOOP' | 'TOP_SIGNALS' | 'SYMPHONY' | 'AGENT_MESH' | 'AUTOHEDGE' | 'RISK_DASHBOARD' | 'GOOGLE_DRIVE' | 'GMAIL' | 'HEATMAP' | 'MOLTBOOK' | 'RESEARCHER' | 'META_COGNITIVE' | 'SPACE_BUNNY_ALPHA' | 'ALL_FEEDS' | 'LEDGER' | 'HALO_CE_VISOR' | 'USER_PROFILE_MAP' | 'AGENTS_OF_CHAOS' | 'SOVEREIGN_COMMAND' | 'FAA_SOV_LICENSE' | 'SOVEREIGN_PORTAL' | 'OMNICYBERDEX' | 'HEALTHCARE_NET' | 'FEDERAL_CRYPTO' | 'TRADING_COMMAND' | 'DAG_FEDERAL_NODE_STATUS' | 'GOV_OPPORTUNITIES' | 'AGENTIC_AMERICA' | 'CYBERGYM_PROGRESSION' | 'GITHUB_FORGE' | 'KOLIBRI_PLATFORM'>('LIVE_TELEMETRY');
   const [alertBanner, setAlertBanner] = useState<{ message: string; type: 'ALERT' | 'SUCCESS' | 'INFO' } | null>(null);
 
   const [connectedWallet, setConnectedWallet] = useState<{ address: string; type: string } | null>({
@@ -436,6 +437,7 @@ export default function App() {
         onToggleExpandedCanvas={() => setIsExpandedCanvas(!isExpandedCanvas)}
         onOpenSpaceBunny={() => setCenterTab('SPACE_BUNNY_ALPHA')}
         onOpenDeviceMapping={() => setCenterTab('DEVICE_SANDBOX_MAPPING')}
+        onOpenLounge={() => setCenterTab('HALO_CE_VISOR')}
       />
 
       {/* Alert Notification Banner */}
@@ -546,11 +548,11 @@ export default function App() {
                         <span>Halo CE &middot; MJOLNIR Mark V Immersive Contact First-Person Visor</span>
                       </span>
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        cybersecurity/halo-ce-universal
+                        cybersecurity/halo-ce-universal &middot; Captain&apos;s Space Lounge
                       </span>
                     </div>
                     <p className="text-xs text-slate-300 mt-1">
-                      Direct tactical combat HUD integration for <b>cybersecurity/halo-ce-universal</b>: 360&deg; motion sensor radar, shield &amp; health solvency bars, MA5B atomic flash-arbitrage targeting, and mempool thermal threat inspection.
+                      Direct tactical combat HUD integration for <b>cybersecurity/halo-ce-universal</b> featuring the <b>Captain&apos;s Cannabis Smoking Lounge</b> immersive video render: downward reverse ventilation vortex, sacred ash canisters soil amendment, living plant grow wall, and orbital Earth deep space vista behind the MJOLNIR Mark V visor.
                     </p>
                   </div>
                 </div>
@@ -801,6 +803,18 @@ export default function App() {
             {centerTab === 'GOV_OPPORTUNITIES' && (
               <FederalComplianceGovSuite
                 onNotify={(msg, type) => setAlertBanner({ message: msg, type })}
+              />
+            )}
+
+            {/* TAB CONTENT: CyberGym Agent Achievement & Progression System */}
+            {centerTab === 'CYBERGYM_PROGRESSION' && (
+              <CyberGymProgressionSuite
+                onNotify={(msg, type) => {
+                  const mappedType = type === 'ALERT' ? 'ALERT' : type === 'WARN' ? 'ALERT' : type === 'SUCCESS' ? 'SUCCESS' : 'INFO';
+                  setAlertBanner({ message: msg, type: mappedType });
+                }}
+                onOpenMesh={() => setCenterTab('AGENT_MESH')}
+                onOpenCompliance={() => setCenterTab('GOV_OPPORTUNITIES')}
               />
             )}
 

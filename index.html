@@ -9,23 +9,35 @@
 
     <!-- Suppression of Vite HMR dev websocket disconnect notices in sandboxed cloud iFrames -->
     <script>
-      window.addEventListener('unhandledrejection', function(event) {
-        if (event && event.reason && (
-          String(event.reason).includes('WebSocket') || 
-          String(event.reason?.message || '').includes('WebSocket') ||
-          String(event.reason).includes('vite')
-        )) {
-          event.preventDefault();
-        }
-      });
-      window.addEventListener('error', function(event) {
-        if (event && event.message && (
-          event.message.includes('WebSocket') || 
-          event.message.includes('vite')
-        )) {
-          event.preventDefault();
-        }
-      });
+      (function() {
+        // Prevent unhandled rejection popup from Vite HMR WebSocket in sandboxed iframes
+        window.addEventListener('unhandledrejection', function(event) {
+          var str = String(event && (event.reason?.message || event.reason?.stack || event.reason || ''));
+          if (str.includes('WebSocket') || str.includes('websocket') || str.includes('vite') || str.includes('ws')) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }, true);
+
+        window.addEventListener('error', function(event) {
+          var str = String(event && (event.message || event.error?.message || event.error || ''));
+          if (str.includes('WebSocket') || str.includes('websocket') || str.includes('vite') || str.includes('ws')) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }, true);
+
+        // Mute console.error for benign Vite WebSocket connection notices
+        var origConsoleError = console.error;
+        console.error = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var full = args.map(function(a) { return String(a && (a.message || a.stack || a)); }).join(' ');
+          if (full.includes('WebSocket closed without opened') || full.includes('failed to connect to websocket')) {
+            return;
+          }
+          return origConsoleError.apply(console, arguments);
+        };
+      })();
     </script>
 
     <!-- Primary Title & Meta SEO -->

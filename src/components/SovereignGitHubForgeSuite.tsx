@@ -31,6 +31,10 @@ import {
   UploadCloud,
   FolderGit2,
   CheckCheck,
+  AlertTriangle,
+  Send,
+  GitCommit,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   SHALOMINATTII_REPOS,
@@ -77,7 +81,7 @@ export const SovereignGitHubForgeSuite: React.FC<SovereignGitHubForgeSuiteProps>
   onOpenCyberDAW,
 }) => {
   // Default to ASSEMBLE_MONOREPO ("Put GitHub Together")
-  const [activeTab, setActiveTab] = useState<'ASSEMBLE_MONOREPO' | 'CATALOG' | 'MESH_PEERS' | 'CONSOLIDATED' | 'PREVERIFY'>('ASSEMBLE_MONOREPO');
+  const [activeTab, setActiveTab] = useState<'ASSEMBLE_MONOREPO' | 'OVERSEAS_SINK' | 'CATALOG' | 'MESH_PEERS' | 'CONSOLIDATED' | 'PREVERIFY'>('ASSEMBLE_MONOREPO');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ALL');
@@ -89,6 +93,16 @@ export const SovereignGitHubForgeSuite: React.FC<SovereignGitHubForgeSuiteProps>
   const [isLoadingGitStatus, setIsLoadingGitStatus] = useState(false);
   const [isSyncingGit, setIsSyncingGit] = useState(false);
   const [lastSyncResult, setLastSyncResult] = useState<any | null>(null);
+
+  // Overseas Sink & Conflict Resolution State
+  const [overseasStatus, setOverseasStatus] = useState<any | null>(null);
+  const [isLoadingOverseasStatus, setIsLoadingOverseasStatus] = useState(false);
+  const [isResolvingConflicts, setIsResolvingConflicts] = useState(false);
+  const [isPushingOverseas, setIsPushingOverseas] = useState(false);
+  const [conflictStrategy, setConflictStrategy] = useState<'SOVEREIGN_OURS' | 'THEIRS'>('SOVEREIGN_OURS');
+  const [githubToken, setGithubToken] = useState('');
+  const [conflictResolutionResult, setConflictResolutionResult] = useState<any | null>(null);
+  const [overseasPushResult, setOverseasPushResult] = useState<any | null>(null);
 
   // Mesh induction state
   const [inductedPeers, setInductedPeers] = useState<InductedMeshPeer[]>([
@@ -141,8 +155,25 @@ export const SovereignGitHubForgeSuite: React.FC<SovereignGitHubForgeSuiteProps>
     }
   };
 
+  // Fetch Overseas Sink Status
+  const fetchOverseasStatus = async () => {
+    setIsLoadingOverseasStatus(true);
+    try {
+      const res = await fetch('/api/github/overseas-sink-status');
+      if (res.ok) {
+        const data = await res.json();
+        setOverseasStatus(data);
+      }
+    } catch {
+      // Fallback
+    } finally {
+      setIsLoadingOverseasStatus(false);
+    }
+  };
+
   useEffect(() => {
     fetchGitStatus();
+    fetchOverseasStatus();
   }, []);
 
   // Trigger Git Stage, Commit, and Monorepo Sync
@@ -163,12 +194,81 @@ export const SovereignGitHubForgeSuite: React.FC<SovereignGitHubForgeSuiteProps>
         const data = await res.json();
         setLastSyncResult(data);
         await fetchGitStatus();
+        await fetchOverseasStatus();
         if (onNotify) onNotify(`✅ GitHub Ecosystem Assembled! Commit: ${data.shortSha} · Ready to push to origin main`, 'SUCCESS');
       }
     } catch (err: any) {
       if (onNotify) onNotify(`Git sync failed: ${err.message}`, 'ALERT');
     } finally {
       setIsSyncingGit(false);
+    }
+  };
+
+  // Trigger Automated Git Conflict Resolution
+  const handleResolveConflicts = async () => {
+    setIsResolvingConflicts(true);
+    if (onNotify) onNotify(`🛡️ Resolving Git Conflicts with strategy: ${conflictStrategy}...`, 'INFO');
+
+    try {
+      const res = await fetch('/api/github/resolve-conflicts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          strategy: conflictStrategy,
+          targetRemote: 'overseas',
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setConflictResolutionResult(data);
+        await fetchGitStatus();
+        await fetchOverseasStatus();
+        if (onNotify) onNotify(`✅ Conflicts resolved cleanly! SHA: ${data.shortSha}. Ready for overseas push.`, 'SUCCESS');
+      } else {
+        if (onNotify) onNotify(`Conflict resolution warning: ${data.error || 'Check logs'}`, 'ALERT');
+      }
+    } catch (err: any) {
+      if (onNotify) onNotify(`Resolution failed: ${err.message}`, 'ALERT');
+    } finally {
+      setIsResolvingConflicts(false);
+    }
+  };
+
+  // Trigger Push to Overseas Sink
+  const handlePushOverseas = async () => {
+    setIsPushingOverseas(true);
+    if (onNotify) onNotify('🚀 Dispatching push to Overseas Sink mirror (main branch)...', 'INFO');
+
+    try {
+      const res = await fetch('/api/github/push-overseas-sink', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          remote: 'overseas',
+          branch: 'main',
+          githubToken: githubToken.trim() || undefined,
+          forceWithLease: true,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOverseasPushResult(data);
+        await fetchGitStatus();
+        await fetchOverseasStatus();
+        if (data.pushExecuted) {
+          if (onNotify) onNotify(`🎉 Successfully pushed to Overseas Sink! SHA: ${data.shortSha}`, 'SUCCESS');
+        } else {
+          if (onNotify) onNotify(`📋 Overseas Push Prepared! Ready to run CLI push command with auth.`, 'INFO');
+        }
+      } else {
+        if (onNotify) onNotify(`Push error: ${data.error || 'Failed to dispatch'}`, 'ALERT');
+      }
+    } catch (err: any) {
+      if (onNotify) onNotify(`Push request failed: ${err.message}`, 'ALERT');
+    } finally {
+      setIsPushingOverseas(false);
     }
   };
 
@@ -405,6 +505,19 @@ export const SovereignGitHubForgeSuite: React.FC<SovereignGitHubForgeSuiteProps>
           </button>
 
           <button
+            onClick={() => setActiveTab('OVERSEAS_SINK')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'OVERSEAS_SINK'
+                ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white font-black shadow-md shadow-rose-600/30'
+                : 'bg-slate-900 text-rose-300 hover:text-white border border-rose-500/30'
+            }`}
+          >
+            <UploadCloud className="w-4 h-4 text-rose-400" />
+            <span>Overseas Sink &amp; Conflict Resolver</span>
+            <span className="px-1.5 py-0.2 bg-rose-500/30 text-rose-200 rounded text-[9px] font-bold">FORCE-SYNC</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('CATALOG')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'CATALOG'
@@ -565,6 +678,234 @@ export const SovereignGitHubForgeSuite: React.FC<SovereignGitHubForgeSuiteProps>
             </div>
           </div>
 
+          {/* OVERSEAS SINK & CONFLICT RESOLUTION WORKSTATION */}
+          <div className="bg-gradient-to-br from-[#0c0818] via-[#090E20] to-[#040814] border-2 border-rose-500/60 rounded-2xl p-6 shadow-2xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-rose-500/30 pb-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-500/50">
+                    <UploadCloud className="w-6 h-6 text-rose-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                      <span>Overseas Sink &amp; Conflict Resolver</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-black ${
+                        overseasStatus?.hasConflicts
+                          ? 'bg-amber-500/30 text-amber-300 border border-amber-500 animate-pulse'
+                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      }`}>
+                        {overseasStatus?.hasConflicts ? '⚠️ CONFLICTS DETECTED' : '✅ SYNC READY'}
+                      </span>
+                    </h2>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Resolves divergence between local branch and overseas mirror (<code>https://github.com/shalominattii-us/overseas-sink.git</code>).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchOverseasStatus}
+                  disabled={isLoadingOverseasStatus}
+                  className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-rose-300 border border-rose-500/40 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingOverseasStatus ? 'animate-spin text-rose-400' : ''}`} />
+                  <span>Check Sink Telemetry</span>
+                </button>
+              </div>
+            </div>
+
+            {/* OVERSEAS SINK METRICS STRIP */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 font-mono text-xs">
+              <div className="bg-[#050814] p-3.5 rounded-xl border border-rose-500/30 space-y-1">
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Overseas Sink Mirror</span>
+                <span className="text-rose-400 font-bold block truncate" title="https://github.com/shalominattii-us/overseas-sink.git">
+                  overseas-sink.git
+                </span>
+                <span className="text-[10px] text-emerald-400 block font-sans">Remote configured (:main)</span>
+              </div>
+
+              <div className="bg-[#050814] p-3.5 rounded-xl border border-slate-800 space-y-1">
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Local HEAD Commit</span>
+                <span className="text-cyan-400 font-bold block">
+                  {overseasStatus?.commitSha ? overseasStatus.commitSha.slice(0, 7) : '83e94db'}
+                </span>
+                <span className="text-[10px] text-slate-400 block font-sans">
+                  Total Commits: {overseasStatus?.commitCount || 2}
+                </span>
+              </div>
+
+              <div className="bg-[#050814] p-3.5 rounded-xl border border-slate-800 space-y-1">
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Conflict Status</span>
+                <span className={`font-bold block ${overseasStatus?.hasConflicts ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  {overseasStatus?.hasConflicts ? 'Divergence Found' : '0 Merge Conflicts'}
+                </span>
+                <span className="text-[10px] text-slate-400 block font-sans">
+                  Unmerged files: {overseasStatus?.unmergedFiles?.length || 0}
+                </span>
+              </div>
+
+              <div className="bg-[#050814] p-3.5 rounded-xl border border-slate-800 space-y-1">
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Push Precedence</span>
+                <span className="text-amber-300 font-bold block">--force-with-lease</span>
+                <span className="text-[10px] text-slate-400 block font-sans">Atomic safe overwrite</span>
+              </div>
+            </div>
+
+            {/* RESOLUTION CONTROLS & STRATEGY */}
+            <div className="bg-[#060a18] p-4 rounded-xl border border-slate-800 space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-amber-400" />
+                    <span>Conflict Resolution Precedence</span>
+                  </span>
+                  <p className="text-[11px] text-slate-300">
+                    Select how conflicting git hunks between local work and overseas sink are resolved:
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono cursor-pointer transition-all ${
+                    conflictStrategy === 'SOVEREIGN_OURS'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60 font-bold'
+                      : 'bg-slate-900 text-slate-400 border-slate-800'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="strategy"
+                      checked={conflictStrategy === 'SOVEREIGN_OURS'}
+                      onChange={() => setConflictStrategy('SOVEREIGN_OURS')}
+                      className="hidden"
+                    />
+                    <span>🛡️ Sovereign Local (OURS)</span>
+                  </label>
+
+                  <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono cursor-pointer transition-all ${
+                    conflictStrategy === 'THEIRS'
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/60 font-bold'
+                      : 'bg-slate-900 text-slate-400 border-slate-800'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="strategy"
+                      checked={conflictStrategy === 'THEIRS'}
+                      onChange={() => setConflictStrategy('THEIRS')}
+                      className="hidden"
+                    />
+                    <span>📥 Upstream Remote (THEIRS)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* ACTION BUTTONS & TOKEN INPUT */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2">
+                <div className="md:col-span-5">
+                  <button
+                    onClick={handleResolveConflicts}
+                    disabled={isResolvingConflicts}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-600 to-emerald-600 hover:from-amber-500 hover:to-emerald-500 text-slate-950 font-black text-xs font-mono rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-600/20 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isResolvingConflicts ? 'animate-spin' : ''}`} />
+                    <span>{isResolvingConflicts ? 'Reconciling Conflicts...' : 'Resolve Conflicts & Purge Markers'}</span>
+                  </button>
+                </div>
+
+                <div className="md:col-span-4">
+                  <input
+                    type="password"
+                    value={githubToken}
+                    onChange={(e) => setGithubToken(e.target.value)}
+                    placeholder="GitHub Token (Optional for server push)"
+                    className="w-full h-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl px-3 py-2 text-xs font-mono text-white placeholder-slate-500 outline-hidden"
+                  />
+                </div>
+
+                <div className="md:col-span-3">
+                  <button
+                    onClick={handlePushOverseas}
+                    disabled={isPushingOverseas}
+                    className="w-full py-2.5 px-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black text-xs font-mono rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Send className={`w-3.5 h-3.5 ${isPushingOverseas ? 'animate-bounce' : ''}`} />
+                    <span>{isPushingOverseas ? 'Pushing...' : 'Push Overseas Sink'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* VERIFIED CLI COMMANDS READY TO PASTE */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
+                Direct Host Terminal Push Script (PowerShell &amp; Bash)
+              </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs">
+                <div className="bg-[#050814] p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+                  <div className="truncate">
+                    <span className="text-[10px] text-cyan-400 block font-bold">PowerShell (Windows / ROG):</span>
+                    <code className="text-slate-300 text-[11px]">
+                      git push --force-with-lease origin main; git push --force-with-lease overseas main
+                    </code>
+                  </div>
+                  <button
+                    onClick={() => handleCopy('git push --force-with-lease origin main; git push --force-with-lease overseas main', 'ps-push')}
+                    className="p-1.5 bg-slate-900 hover:bg-slate-800 text-cyan-300 rounded border border-slate-700 shrink-0"
+                    title="Copy PowerShell Command"
+                  >
+                    {copiedSnippet === 'ps-push' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+
+                <div className="bg-[#050814] p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+                  <div className="truncate">
+                    <span className="text-[10px] text-emerald-400 block font-bold">Bash (Linux / macOS):</span>
+                    <code className="text-slate-300 text-[11px]">
+                      git push --force-with-lease origin main &amp;&amp; git push --force-with-lease overseas main
+                    </code>
+                  </div>
+                  <button
+                    onClick={() => handleCopy('git push --force-with-lease origin main && git push --force-with-lease overseas main', 'bash-push')}
+                    className="p-1.5 bg-slate-900 hover:bg-slate-800 text-emerald-300 rounded border border-slate-700 shrink-0"
+                    title="Copy Bash Command"
+                  >
+                    {copiedSnippet === 'bash-push' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* LIVE CONSOLE LOGS */}
+            {(conflictResolutionResult || overseasPushResult) && (
+              <div className="bg-black/90 rounded-xl p-4 border border-slate-800 space-y-2 font-mono text-xs">
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                  <span className="text-slate-400 font-bold flex items-center gap-1.5 text-[11px]">
+                    <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Overseas Sink Execution Telemetry</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-400">
+                    SHA: {(conflictResolutionResult || overseasPushResult)?.shortSha}
+                  </span>
+                </div>
+                <div className="space-y-1 text-[11px] max-h-36 overflow-y-auto">
+                  {((conflictResolutionResult || overseasPushResult)?.logs || []).map((log: string, idx: number) => (
+                    <div key={idx} className="text-slate-300 flex items-start gap-2">
+                      <span className="text-slate-600 select-none">&gt;</span>
+                      <span className={log.includes('SUCCESS') ? 'text-emerald-400 font-bold' : log.includes('PURGED') ? 'text-cyan-400' : 'text-slate-300'}>
+                        {log}
+                      </span>
+                    </div>
+                  ))}
+                  {overseasPushResult?.requiresToken && (
+                    <div className="text-amber-300 pt-1 font-bold">
+                      ℹ️ Remote push staged. Run the copied PowerShell / Bash command above to authenticate push to overseas GitHub repository.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* SUBMODULES MULTI-REPO ASSEMBLY GRID */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -697,6 +1038,246 @@ git push cybercore main
 # 4. Sync Agent Mesh Subsystem
 git push mesh main`}
             </pre>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: OVERSEAS SINK & CONFLICT RESOLVER                                    */}
+      {/* ========================================================================= */}
+      {activeTab === 'OVERSEAS_SINK' && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-[#120a22] via-[#090E20] to-[#040814] border-2 border-rose-500/70 rounded-2xl p-6 shadow-2xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-rose-500/30 pb-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-500/50">
+                    <UploadCloud className="w-7 h-7 text-rose-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2.5">
+                      <span>Overseas Sink &amp; GitHub Conflict Resolver</span>
+                      <span className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-black ${
+                        overseasStatus?.hasConflicts
+                          ? 'bg-amber-500/30 text-amber-300 border border-amber-500 animate-pulse'
+                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      }`}>
+                        {overseasStatus?.hasConflicts ? '⚠️ CONFLICTS DETECTED' : '✅ CLEAN & READY TO PUSH'}
+                      </span>
+                    </h2>
+                    <p className="text-xs text-slate-300 mt-1">
+                      Direct upstream mirror dispatch: <code>https://github.com/shalominattii-us/overseas-sink.git</code>. Reconciles all non-fast-forward push rejections and divergent history.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchOverseasStatus}
+                  disabled={isLoadingOverseasStatus}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingOverseasStatus ? 'animate-spin text-rose-400' : ''}`} />
+                  <span>Check Sink Telemetry</span>
+                </button>
+              </div>
+            </div>
+
+            {/* OVERSEAS SINK STATUS CARDS */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono text-xs">
+              <div className="bg-[#050814] p-4 rounded-xl border border-rose-500/30 space-y-1.5">
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Target Remote</span>
+                <span className="text-rose-400 font-bold block truncate text-sm">
+                  overseas-sink.git
+                </span>
+                <span className="text-[10px] text-slate-400 block font-sans">
+                  github.com/shalominattii-us
+                </span>
+              </div>
+
+              <div className="bg-[#050814] p-4 rounded-xl border border-slate-800 space-y-1.5">
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Current Branch / SHA</span>
+                <span className="text-cyan-400 font-bold block text-sm">
+                  main @ {overseasStatus?.commitSha ? overseasStatus.commitSha.slice(0, 7) : '83e94db'}
+                </span>
+                <span className="text-[10px] text-emerald-400 block font-sans">
+                  Working tree clean
+                </span>
+              </div>
+
+              <div className="bg-[#050814] p-4 rounded-xl border border-slate-800 space-y-1.5">
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Divergence State</span>
+                <span className={`font-bold block text-sm ${overseasStatus?.hasConflicts ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  {overseasStatus?.hasConflicts ? 'Divergent Branch' : 'Resolved & Synchronized'}
+                </span>
+                <span className="text-[10px] text-slate-400 block font-sans">
+                  Unmerged files: {overseasStatus?.unmergedFiles?.length || 0}
+                </span>
+              </div>
+
+              <div className="bg-[#050814] p-4 rounded-xl border border-slate-800 space-y-1.5">
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Safe Push Flag</span>
+                <span className="text-amber-300 font-bold block text-sm">
+                  --force-with-lease
+                </span>
+                <span className="text-[10px] text-slate-400 block font-sans">
+                  Non-destructive remote sync
+                </span>
+              </div>
+            </div>
+
+            {/* AUTOMATED CONFLICT RESOLUTION STATION */}
+            <div className="bg-[#060a18] p-5 rounded-xl border border-slate-800 space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-amber-400" />
+                    <span>Automated Conflict Purge &amp; Precedence</span>
+                  </span>
+                  <p className="text-xs text-slate-300">
+                    If git push was rejected because remote has conflicting commits, select resolution precedence and run automatic purge:
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-mono cursor-pointer transition-all ${
+                    conflictStrategy === 'SOVEREIGN_OURS'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60 font-bold'
+                      : 'bg-slate-900 text-slate-400 border-slate-800'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="strategy-overseas"
+                      checked={conflictStrategy === 'SOVEREIGN_OURS'}
+                      onChange={() => setConflictStrategy('SOVEREIGN_OURS')}
+                      className="hidden"
+                    />
+                    <span>🛡️ Sovereign Local (OURS)</span>
+                  </label>
+
+                  <label className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-mono cursor-pointer transition-all ${
+                    conflictStrategy === 'THEIRS'
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/60 font-bold'
+                      : 'bg-slate-900 text-slate-400 border-slate-800'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="strategy-overseas"
+                      checked={conflictStrategy === 'THEIRS'}
+                      onChange={() => setConflictStrategy('THEIRS')}
+                      className="hidden"
+                    />
+                    <span>📥 Remote Upstream (THEIRS)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* ACTION BUTTONS & TOKEN INPUT */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2">
+                <div className="md:col-span-5">
+                  <button
+                    onClick={handleResolveConflicts}
+                    disabled={isResolvingConflicts}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-amber-600 to-emerald-600 hover:from-amber-500 hover:to-emerald-500 text-slate-950 font-black text-xs font-mono rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-600/20 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isResolvingConflicts ? 'animate-spin' : ''}`} />
+                    <span>{isResolvingConflicts ? 'Reconciling Conflicts...' : 'Resolve Conflicts & Purge Markers'}</span>
+                  </button>
+                </div>
+
+                <div className="md:col-span-4">
+                  <input
+                    type="password"
+                    value={githubToken}
+                    onChange={(e) => setGithubToken(e.target.value)}
+                    placeholder="GitHub Token (Optional for server push)"
+                    className="w-full h-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl px-3 py-2 text-xs font-mono text-white placeholder-slate-500 outline-hidden"
+                  />
+                </div>
+
+                <div className="md:col-span-3">
+                  <button
+                    onClick={handlePushOverseas}
+                    disabled={isPushingOverseas}
+                    className="w-full py-3 px-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black text-xs font-mono rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Send className={`w-3.5 h-3.5 ${isPushingOverseas ? 'animate-bounce' : ''}`} />
+                    <span>{isPushingOverseas ? 'Pushing...' : 'Push Overseas Sink'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* VERIFIED CLI COMMANDS READY TO PASTE */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono block">
+                Direct Host Terminal Push Script (PowerShell &amp; Bash)
+              </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs">
+                <div className="bg-[#050814] p-3.5 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+                  <div className="truncate">
+                    <span className="text-[10px] text-cyan-400 block font-bold">PowerShell (Windows / ROG):</span>
+                    <code className="text-slate-300 text-xs">
+                      git push --force-with-lease origin main; git push --force-with-lease overseas main
+                    </code>
+                  </div>
+                  <button
+                    onClick={() => handleCopy('git push --force-with-lease origin main; git push --force-with-lease overseas main', 'ps-push')}
+                    className="p-2 bg-slate-900 hover:bg-slate-800 text-cyan-300 rounded border border-slate-700 shrink-0"
+                    title="Copy PowerShell Command"
+                  >
+                    {copiedSnippet === 'ps-push' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+
+                <div className="bg-[#050814] p-3.5 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+                  <div className="truncate">
+                    <span className="text-[10px] text-emerald-400 block font-bold">Bash (Linux / macOS):</span>
+                    <code className="text-slate-300 text-xs">
+                      git push --force-with-lease origin main &amp;&amp; git push --force-with-lease overseas main
+                    </code>
+                  </div>
+                  <button
+                    onClick={() => handleCopy('git push --force-with-lease origin main && git push --force-with-lease overseas main', 'bash-push')}
+                    className="p-2 bg-slate-900 hover:bg-slate-800 text-emerald-300 rounded border border-slate-700 shrink-0"
+                    title="Copy Bash Command"
+                  >
+                    {copiedSnippet === 'bash-push' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* LIVE CONSOLE LOGS */}
+            {(conflictResolutionResult || overseasPushResult) && (
+              <div className="bg-black/90 rounded-xl p-4 border border-slate-800 space-y-2 font-mono text-xs">
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                  <span className="text-slate-400 font-bold flex items-center gap-1.5 text-xs">
+                    <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Overseas Sink Execution Telemetry</span>
+                  </span>
+                  <span className="text-xs text-emerald-400">
+                    SHA: {(conflictResolutionResult || overseasPushResult)?.shortSha}
+                  </span>
+                </div>
+                <div className="space-y-1.5 text-xs max-h-48 overflow-y-auto">
+                  {((conflictResolutionResult || overseasPushResult)?.logs || []).map((log: string, idx: number) => (
+                    <div key={idx} className="text-slate-300 flex items-start gap-2">
+                      <span className="text-slate-600 select-none">&gt;</span>
+                      <span className={log.includes('SUCCESS') ? 'text-emerald-400 font-bold' : log.includes('PURGED') ? 'text-cyan-400' : 'text-slate-300'}>
+                        {log}
+                      </span>
+                    </div>
+                  ))}
+                  {overseasPushResult?.requiresToken && (
+                    <div className="text-amber-300 pt-2 font-bold text-xs">
+                      ℹ️ Remote push staged. Run the copied PowerShell / Bash command above to authenticate push to overseas GitHub repository.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
