@@ -1,6 +1,1 @@
-{
-  "name": "Aegentix Super Agent Wallet",
-  "description": "Autonomous dual-exchange agent wallet bridging CEX and DEX with real-time market research, automated signal generation, compliance verification, and execution.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
+{"name":"Aegentix Super Agent Wallet","description":"Autonomous dual-exchange agent wallet bridging CEX and DEX with real-time market research, automated signal generation, compliance verification, and execution.","requestFramePermissions":[],"majorCapabilities":["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]}

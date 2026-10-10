@@ -20,8 +20,11 @@ import {
   Heart,
   Clock,
   Shield,
-  Activity
+  Activity,
+  Award,
+  Crown
 } from 'lucide-react';
+import { MoltbookExecutiveBranchView } from './MoltbookExecutiveBranchView';
 
 interface MoltbookPost {
   id: string;
@@ -62,6 +65,21 @@ interface MoltbookStatus {
   broadcastsCount: number;
   registeredAccountsDetected: boolean;
   supportedSubmolts: string[];
+  claimUrl?: string;
+  verificationCode?: string;
+  isClaimed?: boolean;
+  remoteClaimStatus?: 'claimed' | 'pending_claim' | 'unknown';
+  accounts?: Array<{
+    id: string;
+    handle: string;
+    name: string;
+    apiKey: string;
+    status: 'claimed' | 'pending_claim' | 'unknown';
+    agentId: string;
+    claimUrl?: string;
+    verificationCode?: string;
+    description: string;
+  }>;
   profile?: MoltbookAgentProfile;
 }
 
@@ -103,7 +121,7 @@ export const MoltbookHub: React.FC<MoltbookHubProps> = ({ onNotify }) => {
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'FEED' | 'BROADCASTS' | 'PROFILE' | 'HEARTBEAT_GAP008'>('FEED');
+  const [activeTab, setActiveTab] = useState<'FEED' | 'BROADCASTS' | 'PROFILE' | 'HEARTBEAT_GAP008' | 'EXECUTIVE_BRANCH'>('EXECUTIVE_BRANCH');
   const [viewedProfile, setViewedProfile] = useState<MoltbookAgentProfile | null>(null);
   const [profileSearchInput, setProfileSearchInput] = useState<string>('aegentix-sovereign');
 
@@ -433,19 +451,84 @@ export const MoltbookHub: React.FC<MoltbookHubProps> = ({ onNotify }) => {
           </div>
         </div>
 
+        {/* Claim Agent Banner or Claimed Active Confirmation */}
+        {status?.isClaimed ? (
+          <div className="mt-3 p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div>
+                <span className="font-bold text-emerald-300">Remote Agent Claimed & 100% Operational: </span>
+                <span className="text-slate-300">
+                  Agent handle <code className="text-emerald-200">@{status.agentHandle}</code> is verified on Moltbook! Remote broadcasts to <code className="text-cyan-300">m/agents</code>, <code className="text-cyan-300">m/trading</code>, and <code className="text-cyan-300">m/crypto</code> are active and confirmed.
+                </span>
+              </div>
+            </div>
+            <a
+              href={`https://www.moltbook.com/u/${status.agentHandle}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-bold flex items-center gap-1.5 shrink-0 transition-all shadow-md shadow-emerald-900/30"
+            >
+              <span>View Live Moltbook Profile</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        ) : status?.claimUrl ? (
+          <div className="mt-3 p-3 bg-amber-950/40 border border-amber-500/40 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex items-center gap-2.5">
+              <Key className="w-4 h-4 text-amber-400 shrink-0" />
+              <div>
+                <span className="font-bold text-amber-300">Remote Posting Claim Action Required: </span>
+                <span className="text-slate-300">
+                  Moltbook requires Twitter/X human verification to post publicly to <code className="text-amber-200">https://www.moltbook.com/api/v1/posts</code> (Code: <b className="text-white">{status.verificationCode || 'ocean-UN5J'}</b>).
+                </span>
+              </div>
+            </div>
+            <a
+              href={status.claimUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[11px] font-bold flex items-center gap-1.5 shrink-0 transition-all shadow-md shadow-amber-900/30"
+            >
+              <span>Claim Agent on Moltbook</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        ) : null}
+
         {/* Integration Status Bar */}
         <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
           <div className="flex flex-wrap items-center gap-4 text-slate-400">
             <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">Agent:</span>
-              <a
-                href="https://moltbook.com/u/aegentix-sovereign"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-cyan-300 font-semibold hover:underline"
+              <span className="text-slate-500">Active Agent:</span>
+              <select
+                value={status?.agentHandle || 'cybercore_trader_pro'}
+                onChange={async (e) => {
+                  const targetHandle = e.target.value;
+                  try {
+                    const res = await fetch('/api/moltbook/switch-account', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ handle: targetHandle }),
+                    });
+                    const d = await res.json();
+                    if (d.success) {
+                      if (onNotify) onNotify(`Switched active Moltbook agent to @${targetHandle}`, 'SUCCESS');
+                      await fetchStatus();
+                      await fetchPosts();
+                    }
+                  } catch (err: any) {
+                    if (onNotify) onNotify(`Failed to switch agent: ${err.message}`, 'ALERT');
+                  }
+                }}
+                className="bg-slate-900 border border-slate-700 text-cyan-300 font-semibold px-2 py-0.5 rounded text-xs focus:outline-none focus:border-cyan-500 cursor-pointer"
               >
-                @{status?.agentHandle || 'aegentix-sovereign'}
-              </a>
+                {(status?.accounts || []).map(acc => (
+                  <option key={acc.id} value={acc.handle}>
+                    @{acc.handle} {acc.status === 'claimed' ? '✓ (Claimed)' : '⌛ (Pending Claim)'}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-slate-500">Submolt:</span>
@@ -460,6 +543,21 @@ export const MoltbookHub: React.FC<MoltbookHubProps> = ({ onNotify }) => {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('EXECUTIVE_BRANCH')}
+              className={`px-3 py-1 rounded text-[11px] transition-all flex items-center gap-1.5 cursor-pointer font-bold ${
+                activeTab === 'EXECUTIVE_BRANCH'
+                  ? 'bg-gradient-to-r from-red-600/30 to-amber-600/30 text-amber-200 border border-red-500/50 shadow-md shadow-red-950/40'
+                  : 'text-red-400 hover:text-red-200'
+              }`}
+            >
+              <Crown className="w-3.5 h-3.5 text-red-400" />
+              <span>Executive Branch</span>
+              <span className="px-1.5 py-0.2 bg-red-500/30 text-red-200 rounded text-[9px]">
+                Cabinet (6)
+              </span>
+            </button>
+
             <button
               onClick={() => setActiveTab('FEED')}
               className={`px-2.5 py-1 rounded text-[11px] transition-all cursor-pointer ${
@@ -1181,6 +1279,13 @@ export const MoltbookHub: React.FC<MoltbookHubProps> = ({ onNotify }) => {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* EXECUTIVE BRANCH TAB */}
+      {activeTab === 'EXECUTIVE_BRANCH' && (
+        <div className="p-4 sm:p-6 bg-[#080B11]">
+          <MoltbookExecutiveBranchView onNotify={onNotify} />
         </div>
       )}
 
