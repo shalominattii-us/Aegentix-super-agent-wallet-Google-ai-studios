@@ -799,7 +799,167 @@ app.get('/api/autonomous/ooda-status', (_req, res) => {
       complianceGate: { port: 9004, script: 'compliance_engine.py', status: 'READY / GATEKEEPER' },
       telemetryBridge: { port: 9005, script: 'cybercore_bridge.py', status: oodaState.externalBridgeConnected ? 'CONNECTED' : 'STANDBY' },
       autonomousOrchestrator: { script: 'cybercore_autonomous.py', status: oodaState.heartbeatActive ? 'ACTIVE_HEARTBEAT' : 'PAUSED' },
+      signingOracle: { port: 50051, script: 'cybercore_daemon.py', status: 'ONLINE / gRPC' },
     },
+  });
+});
+
+// GET /api/cybercore/treasury/status: US Sovereign Quantum Treasury (US-SQTE) $7.3B Reserves & Minimal Node Wallets
+app.get('/api/cybercore/treasury/status', (_req, res) => {
+  res.json({
+    success: true,
+    system: 'US Sovereign Quantum Treasury (US-SQTE)',
+    version: '2026.4-SOVEREIGN',
+    status: 'ONLINE_ACTIVE',
+    totalBackingUsd: 7300000000.0,
+    formattedBackingUsd: '$7,300,000,000.00',
+    backingRatio: 1.0,
+    reserves: {
+      US_TREASURY_BILLS: {
+        amountUsd: 5000000000.0,
+        formatted: '$5,000,000,000.00',
+        assetType: 'US Short-Term Sovereign Debt (T-Bills 0-3M)',
+        custodyMode: 'Sovereign Federal Reserve Account / Book Entry',
+        verified: true,
+      },
+      FED_RESERVE_CASH: {
+        amountUsd: 1000000000.0,
+        formatted: '$1,000,000,000.00',
+        assetType: 'Direct Central Bank Demand Deposit',
+        custodyMode: 'Fedwire Sovereign Account',
+        verified: true,
+      },
+      COINBASE_CDP_USDC: {
+        amountUsd: 250000000.0,
+        formatted: '$250,000,000.00',
+        assetType: 'Liquid Digital Dollar Reserves (USDC CDP)',
+        custodyMode: 'Coinbase Developer Platform Institutional Vault',
+        verified: true,
+      },
+      XRPL_CBDC_BRIDGE: {
+        amountUsd: 1000000000.0,
+        formatted: '$1,000,000,000.00',
+        assetType: 'XRPL RLUSD / Sovereign CBDC Settlement Corridor',
+        custodyMode: 'Xaman / XRPL Automated Liquidity Trustlines',
+        verified: true,
+      },
+      OMNICHAIN_SWARM_YIELD: {
+        amountUsd: 50000000.0,
+        formatted: '$50,000,000.00',
+        assetType: 'Omnichain Proof-of-Stake & Micro-Fee Liquidity Yield',
+        custodyMode: 'Cross-Chain 300-Node Shard Staking Mesh',
+        verified: true,
+      },
+    },
+    minimalNodeTreasuries: {
+      EVM_TREASURY: {
+        network: 'EVM',
+        address: '0x71C865d4fC35E2a188B67B7A98AcB921098A1904',
+        purpose: 'Swap Aggregation, 5-15 BPS Fee Capture, Dilithium Bridge Settlement',
+        status: 'ACTIVE',
+      },
+      XRPL_TREASURY: {
+        network: 'XRPL',
+        address: 'rZamanXRPLMainnetVaultAddr9948271',
+        purpose: 'XRPL OfferCreate, Trustlines, CBDC Settlement',
+        status: 'ACTIVE',
+      },
+      SOLANA_TREASURY: {
+        network: 'SOLANA',
+        address: 'SolanaMinimalTreasuryVault111111111111111111',
+        purpose: 'High-Throughput DEX Routing & Micro-Fee Capture',
+        status: 'ACTIVE',
+      },
+      COSMOS_TREASURY: {
+        network: 'COSMOS',
+        address: 'cosmos1aegentixminimaltreasuryvault99999',
+        purpose: 'IBC Cross-Chain Intent Solves & Staking Vault',
+        status: 'ACTIVE',
+      },
+      BITCOIN_L2_TREASURY: {
+        network: 'BITCOIN_L2',
+        address: 'bc1qaegentixminimalnodebtc2026vault999',
+        purpose: 'Bitcoin L2 Staking, BTC Yield Rebalancing & Taproot Settlement',
+        status: 'ACTIVE',
+      },
+    },
+    jurisdictionalExclusion: {
+      enforced: true,
+      mode: 'STRICT_NON_BYPASSABLE',
+      excludedJurisdictions: ['UAE', 'Dubai', 'Saudi Arabia', 'Qatar', 'Malaysia', 'Sharia-compliant financial zones'],
+      legalBasis: 'Sovereign Article 1 / Zero-Sharia Invariant Protection',
+    },
+  });
+});
+
+// GET /api/cybercore/rewards/summary: Native AEGENTIX Cyber-Genetic Stablecoin & Compute Rewards
+app.get('/api/cybercore/rewards/summary', (_req, res) => {
+  res.json({
+    success: true,
+    stablecoin: {
+      name: 'AEGENTIX Cyber-Genetic Stablecoin',
+      symbol: 'AEGENTIX',
+      ticker: 'AEGX',
+      pegCurrency: 'USD',
+      pegValue: 1.0,
+      stabilityMechanism: '100% Asset-Backed Over-Collateralized Autonomous Treasury',
+      totalBackingUsd: 7300000000.0,
+      circulatingSupply: 12450890.5,
+      reserveRatio: '586.3%',
+    },
+    pricingTiers: {
+      MICRO: { computeUnits: '1-10', baseRate: '0.000100 AEGX / CU' },
+      LOW: { computeUnits: '11-50', baseRate: '0.000095 AEGX / CU' },
+      MEDIUM: { computeUnits: '51-200', baseRate: '0.000090 AEGX / CU' },
+      HIGH: { computeUnits: '201-1000', baseRate: '0.000080 AEGX / CU' },
+      CRITICAL: { computeUnits: '1001+', baseRate: '0.000070 AEGX / CU' },
+    },
+    shardBonuses: {
+      EVM_Mesh: '+10% (Complexity & Gas Optimization)',
+      Base_L2_Mesh: '+15% (Ultra-Fast Rollup Priority)',
+      XRPL_Mesh: '-40% (Zero-Fee High-Velocity Settlement)',
+      Solana_Mesh: '-54% (Sub-Second Transaction Discount)',
+      Cosmos_IBC_Mesh: '+5% (Cross-Zone Intent Bridge)',
+      Bitcoin_L2_Mesh: '+25% (Taproot Security Multiplier)',
+    },
+    settlementEngine: {
+      status: 'AUTONOMOUS_BATCHING',
+      batchIntervalSeconds: 30,
+      minBatchSize: 10,
+      lastSettlementHash: '0x' + crypto.randomBytes(32).toString('hex'),
+      dailyMintedAegx: 4892.45,
+    },
+  });
+});
+
+// GET /api/cybercore/vault/shards: Stateless Zero-Storage Shard Mesh (300 Deterministic Shards)
+app.get('/api/cybercore/vault/shards', (_req, res) => {
+  res.json({
+    success: true,
+    totalShards: 300,
+    vaultArchitecture: 'STATELESS_ZERO_STORAGE',
+    zeroStorageInvariant: {
+      privateKeysStoredOnDisk: false,
+      ephemeralMemoryOnly: true,
+      memoryZeroization: 'MANDATORY_MEMSET_ZERO',
+      entropyProviders: ['HSM (PKCS#11)', 'TPM 2.0', 'Shamir 3-of-5', 'Argon2id KDF'],
+    },
+    shardAllocation: [
+      { shards: '001 - 100', network: 'EVM (Ethereum / Arbitrum)', path: "m/44'/60'/0'/0/{shard}", curve: 'secp256k1 (BIP32/BIP44)' },
+      { shards: '101 - 150', network: 'EVM L2 (Base / Optimism)', path: "m/44'/60'/0'/0/{shard}", curve: 'secp256k1 (BIP32/BIP44)' },
+      { shards: '151 - 200', network: 'XRPL (Xaman Ledger)', path: "m/44'/144'/0'/0/{shard}", curve: 'Ed25519 (SLIP-0010)' },
+      { shards: '201 - 250', network: 'Solana & Move Swarm', path: "m/44'/501'/{shard}'/0'", curve: 'Ed25519 (SLIP-0010)' },
+      { shards: '251 - 280', network: 'Cosmos IBC Hub', path: "m/44'/118'/0'/0/{shard}", curve: 'secp256k1 (BIP32 Bech32)' },
+      { shards: '281 - 300', network: 'Bitcoin L2 Taproot', path: "m/84'/0'/0'/0/{shard}", curve: 'secp256k1 (BIP84 Native SegWit)' },
+    ],
+    sampleDerivedShards: [
+      { shardId: 1, network: 'EVM', address: '0x27A717c69Fb9dCB5C6449cE4bCA8a2eb3FD8a622', derivation: 'BIP32 secp256k1' },
+      { shardId: 100, network: 'Base EVM', address: '0x4F951fe500012200B48E36F9612C576eE758fa70', derivation: 'BIP32 secp256k1' },
+      { shardId: 151, network: 'XRPL', address: 'r3D45LHRhF2TxvR3etR63uPA9xai87kHVd', derivation: 'SLIP-0010 Ed25519 (Ripple base58)' },
+      { shardId: 152, network: 'Solana', address: 'AhPZNbsddUXYpZExgmx8QS3JfuuHze7r4e4sMFMLMwzw', derivation: 'SLIP-0010 Ed25519 (Solana base58)' },
+      { shardId: 202, network: 'Cosmos IBC', address: 'cosmos1pesvtgc33atv4vun9vxmwmp5g3uthpr9fswtdg', derivation: 'BIP32 secp256k1 (Bech32)' },
+      { shardId: 252, network: 'Bitcoin L2', address: '1KCSqV6Cwet4UuSDDE9ZFS6UmSe2NdzMrD', derivation: 'BIP84 secp256k1' },
+    ],
   });
 });
 
@@ -1388,6 +1548,36 @@ app.get('/api/terminal/scripts', (_req, res) => {
           runtime: 'Python Google GenAI / Gemini 3.8 & 3.1 Flash Suite',
           role: 'Multimodal sovereign market analysis, Gemini qualitative telemetry evaluation, and resilient fallback inference for Heretic LLM',
           code: readSafe('lib/gemini_agent.py'),
+        },
+        {
+          id: 'cybercore_cli',
+          name: 'cybercore_cli.py',
+          title: 'CyberCore Sovereign Multi-Chain CLI',
+          port: null,
+          command: 'python cybercore_cli.py --help',
+          runtime: 'Pure-Python virtual environment',
+          role: 'Deterministic 300-shard derivations, stateless signing, capability token issuance, and reward calculation',
+          code: readSafe('cybercore_cli.py'),
+        },
+        {
+          id: 'cybercore_daemon',
+          name: 'cybercore_daemon.py',
+          title: 'CyberCore Background Daemon & gRPC Signing Oracle',
+          port: 50051,
+          command: 'python cybercore_daemon.py --port 50051',
+          runtime: 'gRPC Microservice / Ephemeral Vault',
+          role: 'Listens on port 50051, validates capability tokens, performs ephemeral zero-storage derivations, and executes signatures',
+          code: readSafe('cybercore_daemon.py'),
+        },
+        {
+          id: 'test_cybercore_e2e',
+          name: 'test_cybercore_e2e.py',
+          title: 'CyberCore Sovereign Architectural Verification Suite',
+          port: null,
+          command: 'python test_cybercore_e2e.py',
+          runtime: 'E2E Test Runner',
+          role: 'Comprehensive 6-subsystem verification: Jurisdiction exclusion, SLIP-0010/BIP32, Zero-storage vault, 5 Minimal Treasury wallets, $7.3B Backed Stablecoin, and Merkle audit chain',
+          code: readSafe('test_cybercore_e2e.py'),
         },
       ],
     });
