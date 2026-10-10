@@ -857,31 +857,74 @@ app.get('/api/cybercore/treasury/status', (_req, res) => {
         address: '0x71C865d4fC35E2a188B67B7A98AcB921098A1904',
         purpose: 'Swap Aggregation, 5-15 BPS Fee Capture, Dilithium Bridge Settlement',
         status: 'ACTIVE',
+        rpcEndpoints: {
+          ethereum: 'https://eth.llamarpc.com',
+          base: 'https://mainnet.base.org',
+          arbitrum: 'https://arb1.arbitrum.io/rpc',
+          optimism: 'https://mainnet.optimism.io',
+          polygon: 'https://polygon-rpc.com',
+        },
       },
       XRPL_TREASURY: {
         network: 'XRPL',
         address: 'rZamanXRPLMainnetVaultAddr9948271',
         purpose: 'XRPL OfferCreate, Trustlines, CBDC Settlement',
         status: 'ACTIVE',
+        rpcEndpoints: {
+          websocket: 'wss://xrplcluster.com',
+          http: 'https://xrplcluster.com',
+        },
       },
       SOLANA_TREASURY: {
         network: 'SOLANA',
         address: 'SolanaMinimalTreasuryVault111111111111111111',
         purpose: 'High-Throughput DEX Routing & Micro-Fee Capture',
         status: 'ACTIVE',
+        rpcEndpoints: {
+          http: 'https://api.mainnet-beta.solana.com',
+        },
       },
       COSMOS_TREASURY: {
         network: 'COSMOS',
         address: 'cosmos1aegentixminimaltreasuryvault99999',
         purpose: 'IBC Cross-Chain Intent Solves & Staking Vault',
         status: 'ACTIVE',
+        rpcEndpoints: {
+          rest: 'https://cosmos-rpc.quickapi.com:443',
+          grpc: 'cosmos-grpc.quickapi.com:443',
+        },
       },
       BITCOIN_L2_TREASURY: {
         network: 'BITCOIN_L2',
         address: 'bc1qaegentixminimalnodebtc2026vault999',
         purpose: 'Bitcoin L2 Staking, BTC Yield Rebalancing & Taproot Settlement',
         status: 'ACTIVE',
+        rpcEndpoints: {
+          stacks: 'https://stacks-node-api.mainnet.stacks.co',
+        },
       },
+    },
+    aegentixStablecoinContracts: {
+      ethereum: '0xAEGENTIX...',
+      base: '0xAEGENTIX...',
+      arbitrum: '0xAEGENTIX...',
+      optimism: '0xAEGENTIX...',
+      polygon: '0xAEGENTIX...',
+      xrpl: 'AEGENTIX', // XRPL IOU currency code
+      solana: 'AEGENTIX...', // SPL Token mint
+      cosmos: 'ibc/AEGENTIX...', // IBC denom
+      stacks: 'SP...AEGENTIX', // SIP-010
+    },
+    rpcEndpoints: {
+      ethereum: 'https://eth.llamarpc.com',
+      base: 'https://mainnet.base.org',
+      arbitrum: 'https://arb1.arbitrum.io/rpc',
+      optimism: 'https://mainnet.optimism.io',
+      polygon: 'https://polygon-rpc.com',
+      xrpl: 'https://xrplcluster.com',
+      solana: 'https://api.mainnet-beta.solana.com',
+      cosmos: 'https://cosmos-rpc.quickapi.com:443',
+      stacks: 'https://stacks-node-api.mainnet.stacks.co',
     },
     jurisdictionalExclusion: {
       enforced: true,
@@ -906,6 +949,17 @@ app.get('/api/cybercore/rewards/summary', (_req, res) => {
       totalBackingUsd: 7300000000.0,
       circulatingSupply: 12450890.5,
       reserveRatio: '586.3%',
+      contractAddresses: {
+        ethereum: '0xAEGENTIX...',
+        base: '0xAEGENTIX...',
+        arbitrum: '0xAEGENTIX...',
+        optimism: '0xAEGENTIX...',
+        polygon: '0xAEGENTIX...',
+        xrpl: 'AEGENTIX',
+        solana: 'AEGENTIX...',
+        cosmos: 'ibc/AEGENTIX...',
+        stacks: 'SP...AEGENTIX',
+      },
     },
     pricingTiers: {
       MICRO: { computeUnits: '1-10', baseRate: '0.000100 AEGX / CU' },
