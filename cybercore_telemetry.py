@@ -14,7 +14,7 @@ from security.agent_security_engine import SecurityEngine
 
 HERETIC_URL = "http://localhost:9003/generate"
 COMPLIANCE_URL = "http://localhost:9004/gate/verify"
-TELEMETRY_URL = "http://localhost:9005/telemetry/push"
+TELEMETRY_URL = "http://localhost:9006/telemetry/push"
 WEB_UI_TELEMETRY_URL = "http://localhost:3000/api/telemetry"
 
 
@@ -107,7 +107,7 @@ class CyberCoreLive:
         # Event-Driven Condition: trigger Heretic/Gemini if NAV moved > 0.1% OR Spread exceeds 0.60%
         if nav_deviation >= self.deviation_threshold or spread_pct >= 0.60:
             self.pulse_counter += 1
-            print(f"\n[LIVE ALPHA TRIGGER #{self.pulse_counter}] NAV: ${nav:,.2f} (Δ {nav_deviation*100:.3f}%) | {symbol} Spread: {spread_pct}%")
+            print(f"\n[LIVE ALPHA TRIGGER #{self.pulse_counter}] NAV: ${nav:,.2f} (Delta {nav_deviation*100:.3f}%) | {symbol} Spread: {spread_pct}%")
             
             # Step 1 & 2: Run Cycle (Heretic -> Gemini 3.8 Flash fallback)
             signal_text = await self._run_cycle(symbol, cex_price, dex_price, spread_pct, nav, nav_deviation)

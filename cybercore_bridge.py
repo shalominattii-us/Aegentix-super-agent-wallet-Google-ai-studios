@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 CyberCore Bridge (The Telemetry)
-Port: 9005
+Port: 9006
 Collects live telemetry from AutonomousCyberCore, monitors OODA loop state transitions,
 and syncs real-time events directly with the Super Agent Wallet Web UI.
 """
@@ -12,7 +12,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import sys
 import urllib.request
 
-PORT = 9005
+PORT = 9006
 
 # In-memory telemetry log buffer
 telemetry_events = []

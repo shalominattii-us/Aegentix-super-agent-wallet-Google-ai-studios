@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Compliance & Security Engine (The Gate)
-Port: 9001 (default)
+Port: 9004 (default)
 Enforces hard behavioral invariants, anomaly detection, and cryptographic HMAC gate blocks
 before autonomous signals can reach the DEX/CEX execution layer.
 Provides nanotransaction auditing, metrics, and immutable audit trail.
@@ -14,12 +14,28 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import sys
 from security.agent_security_engine import SecurityEngine
 
-PORT = 9001
+PORT = 9004
 engine = SecurityEngine()
 audit_trail = []
 
+# Authentication
+API_KEY = "aegentix-sovereign-gate-key-2026"
+AUTH_HEADER = "X-API-Key"
+
 
 class ComplianceGateHandler(BaseHTTPRequestHandler):
+    def _check_auth(self):
+        """Validate API key authentication."""
+        auth_key = self.headers.get(AUTH_HEADER)
+        if auth_key != API_KEY:
+            self._set_headers(401)
+            self.wfile.write(json.dumps({
+                "error": "Unauthorized",
+                "message": "Invalid or missing API key"
+            }).encode("utf-8"))
+            return False
+        return True
+
     def _set_headers(self, status=200):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
@@ -74,6 +90,10 @@ class ComplianceGateHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"error": "Not found"}).encode("utf-8"))
 
     def do_POST(self):
+        # Require authentication for all POST endpoints
+        if not self._check_auth():
+            return
+            
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length) if content_length > 0 else b"{}"
         try:

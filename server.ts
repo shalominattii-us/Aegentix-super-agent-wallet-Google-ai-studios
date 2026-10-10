@@ -797,7 +797,7 @@ app.get('/api/autonomous/ooda-status', (_req, res) => {
     daemons: {
       hereticBrain: { port: 9003, script: 'heretic_server.py', status: 'READY / AUTONOMOUS' },
       complianceGate: { port: 9004, script: 'compliance_engine.py', status: 'READY / GATEKEEPER' },
-      telemetryBridge: { port: 9005, script: 'cybercore_bridge.py', status: oodaState.externalBridgeConnected ? 'CONNECTED' : 'STANDBY' },
+      telemetryBridge: { port: 9006, script: 'cybercore_bridge.py', status: oodaState.externalBridgeConnected ? 'CONNECTED' : 'STANDBY' },
       autonomousOrchestrator: { script: 'cybercore_autonomous.py', status: oodaState.heartbeatActive ? 'ACTIVE_HEARTBEAT' : 'PAUSED' },
       signingOracle: { port: 50051, script: 'cybercore_daemon.py', status: 'ONLINE / gRPC' },
     },
@@ -1567,7 +1567,7 @@ app.get('/api/terminal/scripts', (_req, res) => {
           id: 'cybercore_bridge',
           name: 'cybercore_bridge.py',
           title: 'The Telemetry (Bridge Server)',
-          port: 9005,
+          port: 9006,
           command: 'python cybercore_bridge.py',
           runtime: 'Pure-Python virtual environment (venv)',
           role: 'Bridges events between autonomous orchestrator and Super Agent Wallet web UI',
@@ -4810,7 +4810,7 @@ app.post('/api/moltbook/comment', async (req, res) => {
   }
 });
 
-// GET /api/compliance/heatmap: Ingests direct metrics from :9001 compliance engine (or local chain)
+// GET /api/compliance/heatmap: Ingests direct metrics from :9004 compliance engine (or local chain :9001)
 // Renders matrix of Asset vs Time Window, calculating risk score, slippage drift, and invariant violations
 app.get('/api/compliance/heatmap', async (req, res) => {
   try {
@@ -4818,9 +4818,9 @@ app.get('/api/compliance/heatmap', async (req, res) => {
     let auditTrail: any[] = [];
     let isConnected9001 = false;
 
-    // Attempt direct live fetch from :9001 engine
+    // Attempt direct live fetch from :9004 engine (Python) first, then :9001 (Docker)
     try {
-      const metricsResp = await fetch('http://127.0.0.1:9001/compliance-metrics', {
+      const metricsResp = await fetch('http://127.0.0.1:9004/compliance-metrics', {
         signal: AbortSignal.timeout(1500),
       });
       if (metricsResp.ok) {
@@ -4830,7 +4830,7 @@ app.get('/api/compliance/heatmap', async (req, res) => {
     } catch {}
 
     try {
-      const auditResp = await fetch('http://127.0.0.1:9001/audit-trail', {
+      const auditResp = await fetch('http://127.0.0.1:9004/audit-trail', {
         signal: AbortSignal.timeout(1500),
       });
       if (auditResp.ok) {
@@ -4901,7 +4901,7 @@ app.get('/api/compliance/heatmap', async (req, res) => {
   }
 });
 
-// GET /symphony/health: Aggregated health check of the sovereign stack (Brain :9003, Judge :9001, Telemetry :9004, Conductor :9005)
+// GET /symphony/health: Aggregated health check of the sovereign stack (Brain :9003, Judge :9001, Telemetry :9006, Conductor :9005)
 app.get(['/symphony/health', '/api/symphony/health'], async (_req, res) => {
   const orchestra: Record<string, 'ONLINE' | 'OFFLINE' | 'ACTIVE'> = {
     BRAIN: 'ONLINE',
@@ -4913,7 +4913,7 @@ app.get(['/symphony/health', '/api/symphony/health'], async (_req, res) => {
   const services: Record<string, string> = {
     BRAIN: 'http://localhost:9003/health',
     JUDGE: 'http://localhost:9001/status',
-    TELEMETRY: 'http://localhost:9004/status',
+    TELEMETRY: 'http://localhost:9006/health',
     PORTAL: 'http://localhost:3002',
   };
 

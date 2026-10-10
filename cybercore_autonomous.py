@@ -5,7 +5,7 @@ Executes a proactive, self-triggering alpha-generation loop every 60 seconds:
 1. OBSERVE: Scrapes DEX liquidity, CEX depth, and Social/News sentiment.
 2. ORIENT & DECIDE: Consults Heretic LLM (Port 9003) for bounded decision logic.
 3. COMPLIANCE GATE: Passes signal through hard security invariants (Port 9004).
-4. ACT & BROADCAST: Telemetry dispatch to Super Agent Wallet (Port 9005 / Port 3000).
+4. ACT & BROADCAST: Telemetry dispatch to Super Agent Wallet (Port 9006 / Port 3000).
 """
 
 import asyncio
@@ -18,7 +18,7 @@ from security.agent_security_engine import SecurityEngine
 
 HERETIC_URL = "http://localhost:9003/generate"
 COMPLIANCE_URL = "http://localhost:9004/gate/verify"
-TELEMETRY_URL = "http://localhost:9005/telemetry/push"
+TELEMETRY_URL = "http://localhost:9006/telemetry/push"
 WEB_UI_TELEMETRY_URL = "http://localhost:3000/api/telemetry"
 
 
@@ -50,7 +50,7 @@ class AutonomousCyberCore:
         return await loop.run_in_executor(None, _sync_req)
 
     async def broadcast_telemetry(self, event_data: dict):
-        """Pushes telemetry to Python bridge (9005) and Web UI (3000)."""
+        """Pushes telemetry to Python bridge (9006) and Web UI (3000)."""
         await self._post_json(TELEMETRY_URL, event_data, timeout=0.8)
         await self._post_json(WEB_UI_TELEMETRY_URL, event_data, timeout=0.8)
 
