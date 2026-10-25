@@ -1,0 +1,64 @@
+{
+  "totalRevenueEarnedUsd": 0,
+  "gasTankBalanceUsd": 0,
+  "gasTankEth": 0,
+  "gasTankSol": 0,
+  "treasuryVaultBalanceUsd": 0,
+  "gasRefuelRatioPct": 35,
+  "treasuryRatioPct": 65,
+  "payoutWalletSol": "4u8D51aX8B2Kp93kYvLmQjPo871aZb91e8X2",
+  "payoutWalletEvm": "0x71C568a29A88F3c37e97123984FaA628469E849F",
+  "integratorBps": 25,
+  "streams": [
+    {
+      "id": "stream-swap-routing",
+      "name": "Jupiter / Aggregator Swap Routing",
+      "protocol": "Jupiter V6 (Solana) + Multi-DEX",
+      "type": "swap_routing",
+      "status": "active",
+      "totalEarnedUsd": 0,
+      "transactionCount": 0,
+      "description": "Takes a small integrator cut (default 0.25%) on routed swap volume. Zero inventory risk.",
+      "capitalRequired": 0
+    },
+    {
+      "id": "stream-flash-liq",
+      "name": "Atomic Flash Loan Liquidations",
+      "protocol": "Aave v3 / Compound / Morpho (multi-chain)",
+      "type": "flash_liquidation",
+      "status": "active",
+      "totalEarnedUsd": 0,
+      "transactionCount": 0,
+      "description": "Captures liquidation bonuses via atomic flash loans. No capital locked between txs.",
+      "capitalRequired": 0
+    },
+    {
+      "id": "stream-agent-x402",
+      "name": "Agent x402 Micropayments",
+      "protocol": "Aegentix Agent Mesh / x402",
+      "type": "agent_micropayment",
+      "status": "active",
+      "totalEarnedUsd": 0,
+      "transactionCount": 0,
+      "description": "Charges other agents for data, signals, and compute services via micropayments.",
+      "capitalRequired": 0
+    }
+  ],
+  "recentInflows": [],
+  "coinbaseSink": {
+    "enabled": true,
+    "portfolioUuid": "b7f531d6-3469-4a8b-8d5e-4fca09ad54b7",
+    "walletName": "Super Agent Wallet",
+    "mode": "treasury_primary"
+  },
+  "risk": {
+    "maxSingleInflowUsd": 50000,
+    "maxDailyVolumeUsd": 250000,
+    "maxDailyGrossFeeUsd": 5000,
+    "minGasTankFloorUsd": 25,
+    "requireLiveFlagForRealExecution": true,
+    "velocityWindowMinutes": 15,
+    "maxInflowsPerWindow": 40
+  },
+  "lastUpdated": "2026-10-24T23:12:00-06:00"
+}
