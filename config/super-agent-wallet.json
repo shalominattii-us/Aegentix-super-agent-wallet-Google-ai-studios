@@ -1,0 +1,56 @@
+{
+  "source": "coinbase-advanced-trade",
+  "wallet_name": "Super Agent Wallet",
+  "status": "ready",
+  "ready_for_transactions": true,
+  "portfolio": {
+    "uuid": "b7f531d6-3469-4a8b-8d5e-4fca09ad54b7",
+    "name": "Super Agent Wallet",
+    "type": "CONSUMER"
+  },
+  "accounts": {
+    "usdc": {
+      "uuid": "8cdb3a8e-5314-5979-a3b7-66a2d1ad640e",
+      "currency": "USDC",
+      "available": "24.521345",
+      "type": "crypto"
+    },
+    "btc": {
+      "uuid": "6b0879ac-fc28-57b8-9d21-f06aed98dac8",
+      "currency": "BTC",
+      "available": "0.00006058",
+      "type": "crypto"
+    },
+    "usd_cash": {
+      "uuid": "8c608a21-0873-5e3e-b27d-c46cc6134514",
+      "currency": "USD",
+      "available": "0",
+      "type": "fiat"
+    }
+  },
+  "balances": {
+    "total_usd": "29.4180659652162",
+    "cash_equivalent_usd": "24.5213448853162",
+    "crypto_usd": "4.8967210799"
+  },
+  "capabilities": [
+    "balance_query",
+    "spot_trading",
+    "order_preview",
+    "order_placement",
+    "fill_history",
+    "portfolio_isolation"
+  ],
+  "auth": {
+    "method": "cdp_jwt_or_oauth",
+    "notes": "Credentials loaded via environment or Grok Coinbase connector. Never hard-code secrets."
+  },
+  "aegentix": {
+    "target": "Sovereign Super Agent Wallet / CyberCore",
+    "integration_mode": "exchange_gateway",
+    "authority_level": "operator+",
+    "event_namespace": "cybercore.treasury.coinbase-super-agent"
+  },
+  "timestamp": "2026-10-24T22:51:00-06:00",
+  "version": "1.1"
+}
