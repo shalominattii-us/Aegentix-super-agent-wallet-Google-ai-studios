@@ -396,12 +396,15 @@ export default function App() {
               setLastSyncTime(new Date().toLocaleTimeString());
             }
             if (payload.type === 'CONTINUOUS_AUTONOMOUS_TICK') {
+              const autoMsg = `[Nonstop Autopilot] Captured +$${payload.latestAlpha} USD on ${payload.targetPair} (Spread: ${payload.spreadPct}%). Block #${payload.blockHeight}.`;
               setThoughtLogs((prev) => [
                 {
                   id: `log-auto-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-                  timestamp: new Date().toLocaleTimeString(),
+                  timestamp: new Date().toISOString(),
+                  step: 'EXECUTE',
                   stage: 'EXECUTE',
-                  content: `[Nonstop Autopilot] Captured +$${payload.latestAlpha} USD on ${payload.targetPair} (Spread: ${payload.spreadPct}%). Block #${payload.blockHeight}.`,
+                  message: autoMsg,
+                  content: autoMsg,
                   level: 'INFO'
                 },
                 ...prev.slice(0, 50)
