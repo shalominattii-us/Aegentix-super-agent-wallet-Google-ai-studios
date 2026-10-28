@@ -33,3 +33,20 @@ server.ts.rej
 *.vdi
 *.vmdk
 *.exe
+
+# ---- generated runtime data (never commit) ----
+desktop/shadow-trades.jsonl
+desktop/memory-vault.json
+local/
+logs/
+*.jsonl
+aegentix-trading/proposals.json
+aegentix-trading/ledger.json
+
+# ---- secrets / keys ----
+.env
+.env.*
+!.env.example
+*.pem
+*keypair*
+id.json
