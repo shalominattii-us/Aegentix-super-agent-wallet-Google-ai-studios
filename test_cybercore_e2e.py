@@ -233,7 +233,7 @@ def test_native_stablecoin_and_rewards():
 def test_oracle_capabilities_and_audit():
     print("\n--- [6] Testing Signing Oracle Capabilities & Merkle Audit Trail ---")
     
-    cap_mgr = CapabilityManager(signing_key=b"AEGENTIX_ORACLE_HMAC_MASTER_KEY_2026_X"[:32])
+    cap_mgr = CapabilityManager(signing_key=os.urandom(32))
     issued_tok = cap_mgr.issue_token(
         agent_id="agent-001",
         allowed_paths=["m/44'/60'/0'/0/*"],

@@ -1,0 +1,57 @@
+{
+  "audit_phase": "Phase 1.1R — Evidence Integrity & Technical Gate Audit",
+  "audit_timestamp": "2026-10-31T20:47:57.178Z",
+  "git_commit": "563a740c6dfc1c8b8fc31b3b625a95a8367696a0",
+  "runtime_environment": {
+    "node_version": "v26.7.0",
+    "platform": "win32",
+    "architecture": "x64",
+    "execution_command": "npx tsx src/market-registry/tests/masterPhase11RRunner.ts"
+  },
+  "gate_verifications": {
+    "gate_1_operational_health_missing_adapters": "CLOSED_AND_VERIFIED",
+    "gate_2_treasury_isolation_security_boundary": "CLOSED_AND_VERIFIED",
+    "gate_3_regulatory_evidence_source_verification": "CLOSED_AND_VERIFIED",
+    "gate_4_test_reproducibility_clean_run_record": "CLOSED_AND_VERIFIED"
+  },
+  "test_suites": [
+    {
+      "suite": "Unit Tests (Normalizers & Ticker Aliases)",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "suite": "Adapter Contract Tests (Rejection & Fallback)",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "suite": "HTTP Route Acceptance Tests (6 Live Endpoints)",
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "suite": "Security & Isolation Tests (Treasury Non-Execution)",
+      "passed": 4,
+      "failed": 0
+    },
+    {
+      "suite": "Regulatory Evidence Checks (23 Venues Mapped)",
+      "passed": 6,
+      "failed": 0
+    }
+  ],
+  "aggregate_metrics": {
+    "total_checks": 29,
+    "passed": 29,
+    "failed": 0,
+    "compliance_percentage": "100.0"
+  },
+  "evidence_distribution": {
+    "live_api_records": 0,
+    "local_fixture_records": 53,
+    "official_static_records": 12,
+    "orderbook_verified_records": 0,
+    "execution_authorized_records": 0
+  }
+}

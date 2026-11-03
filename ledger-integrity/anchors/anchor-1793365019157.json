@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-10-30T12:56:59.157Z",
+  "anchors": [
+    {
+      "label": "session-meter",
+      "ledgerFile": "aegentix-trading/local/session.meter.jsonl",
+      "entries": 2,
+      "firstEntryAt": "2026-10-30T12:56:59.017Z",
+      "lastEntryAt": "2026-10-30T12:56:59.017Z",
+      "chainHead": "58d9d1fd5a83bd1f9d78ee8ae174d83086747bda3c7768a777870c4cf8c04d8c",
+      "merkleRoot": "7ae50ce53b4e406c713ed0378e8930ddf8aafc898598b97646a6a28d56f4e512",
+      "computedAt": "2026-10-30T12:56:59.155Z",
+      "bundleHash": "68b1568d9c6c3c75e17f7bea2d68cac20ca0178b4858f7c2da7a758568762aab"
+    },
+    {
+      "label": "machine-mirror",
+      "ledgerFile": "local/mirror.chain.jsonl",
+      "entries": 5,
+      "firstEntryAt": "2026-10-30T12:56:59.017Z",
+      "lastEntryAt": "2026-10-30T12:56:59.041Z",
+      "chainHead": "a5a8fe5d0e1b2b9a1d200405c79b7c53017cb4527cab58dfdc5c0994799e99c6",
+      "merkleRoot": "89905dfa1e9cb9a70056d538360c9590bb0fdc3f4e2fa2a2a9d772b7cc74f0c4",
+      "computedAt": "2026-10-30T12:56:59.157Z",
+      "bundleHash": "d409b0ad00b90fe7b3ee5d7d69cfb884d4b1b0a390b4270006dd2ab64adbf06e"
+    }
+  ]
+}

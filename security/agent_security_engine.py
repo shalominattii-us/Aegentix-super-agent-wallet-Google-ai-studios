@@ -5,13 +5,20 @@ and generates cryptographic HMAC-SHA256 authorization proofs.
 """
 
 import hmac
+import json
+import os
 import hashlib
 import time
 from typing import Dict, Any, List, Optional
 
 
 class SecurityEngine:
-    def __init__(self, sovereign_key: str = "aegentix-sovereign-secret"):
+    def __init__(self, sovereign_key: Optional[str] = None):
+        if not sovereign_key:
+            key_path = os.path.join(os.path.expanduser("~"), ".aegentix-dev-keys", "sovereign_hmac.key")
+            sovereign_key = os.environ.get("AEGENTIX_SOVEREIGN_HMAC_KEY") or (open(key_path).read().strip() if os.path.exists(key_path) else "")
+            if not sovereign_key:
+                raise RuntimeError("Missing rotated sovereign HMAC key in ~/.aegentix-dev-keys/sovereign_hmac.key")
         self.sovereign_key = sovereign_key.encode("utf-8")
         self.event_history: List[Dict[str, Any]] = []
         self.last_trade_time: float = 0
@@ -70,7 +77,7 @@ class SecurityEngine:
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
         
-        payload_bytes = str(sorted(block_payload.items())).encode("utf-8")
+        payload_bytes = json.dumps(block_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
         block_hash = hmac.new(self.sovereign_key, payload_bytes, hashlib.sha256).hexdigest()
         self.previous_hash = block_hash
 

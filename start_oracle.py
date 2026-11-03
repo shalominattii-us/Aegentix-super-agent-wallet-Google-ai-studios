@@ -34,7 +34,7 @@ except ImportError:
 
 def main():
     parser = argparse.ArgumentParser(description="CyberCore gRPC Signing Oracle")
-    parser.add_argument("--host", default="0.0.0.0", help="gRPC server host")
+    parser.add_argument("--host", default=os.getenv("CYBERCORE_ORACLE_HOST", "127.0.0.1"), help="gRPC server host")
     parser.add_argument("--port", type=int, default=50051, help="gRPC server port")
     parser.add_argument("--metrics-port", type=int, default=9090, help="Prometheus metrics port")
     parser.add_argument("--with-hermes", action="store_true", help="Enable Hermes message bus integration")
@@ -44,8 +44,18 @@ def main():
     parser.add_argument("--enable-metrics", action="store_true", help="Enable Prometheus metrics")
     args = parser.parse_args()
     
+    # Load master passphrase from environment or rotated sovereign key file (never hardcode)
+    key_file = os.path.join(os.path.expanduser("~"), ".aegentix-dev-keys", "sovereign_hmac.key")
+    passphrase = (
+        os.getenv("CYBERCORE_MASTER_PASSPHRASE")
+        or os.getenv("AEGENTIX_SOVEREIGN_HMAC_KEY")
+        or (open(key_file).read().strip() if os.path.exists(key_file) else "")
+    ).strip()
+    if not passphrase or len(passphrase) < 32:
+        raise RuntimeError(f"CRITICAL: Missing master passphrase in CYBERCORE_MASTER_PASSPHRASE or {key_file}")
+
     # Register Argon2 provider in global registry
-    provider = Argon2Provider(passphrase='cybercore-master-seed-2024', country_code='US')
+    provider = Argon2Provider(passphrase=passphrase, country_code='US')
     registry = get_global_registry()
     registry.register(provider)
     print(f'Registered Argon2 provider: healthy={provider.health_check()}')

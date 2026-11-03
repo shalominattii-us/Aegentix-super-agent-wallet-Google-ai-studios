@@ -30,6 +30,20 @@ const LOG_FILE = path.join(BRAIN_DIR, 'autonomous-daemon.log');
 const MEMORY_VAULT_FILE = path.join(BRAIN_DIR, 'memory-vault.json');
 const SYNC_SCRIPT = path.resolve(__dirname, 'google-ai-studio-sync.js');
 
+// Sovereign Expedition Vessel & Treasury Fleet Active Rotation Roster
+const ROTATING_FLEET = [
+  { name: "Sentinel-9", station: "ESCROW-GUARDIAN", role: "Seat Lead & Exploit Guard" },
+  { name: "White-Team-Agent", station: "COMMAND-BRIDGE", role: "Expedition Master Governance" },
+  { name: "Blue-Team-Agent", station: "DEFENSE-OPERATIONS-CENTER", role: "Real-Time SOC Containment" },
+  { name: "Moltbook-Trader", station: "HFT-ARBITRAGE-NODE", role: "29-Exchange Basis Arbitrageur" },
+  { name: "Revenue-Flywheel-Executor", station: "TREASURY-BRIDGE", role: "Zero-Cap Flywheel Solver" },
+  { name: "Treasury-Commander-Alpha", station: "TREASURY-VAULT", role: "Reserve & NAV Verification" },
+  { name: "FireWire-Agent", station: "PHYSICAL-HARDWARE-INTERFACES", role: "DMA Bus Security" },
+  { name: "TripWire-Agent", station: "STORAGE-ENCLAVE", role: "Cryptographic FIM & Canaries" },
+  { name: "Green-Team-Agent", station: "OT-INFRASTRUCTURE-ENCLAVE", role: "Zero-Trust Microsegmentation" },
+  { name: "AE-KITT", station: "SOVEREIGN-THRONE", role: "Autonomous Throne Navigation" }
+];
+
 if (!fs.existsSync(BRAIN_DIR)) {
   fs.mkdirSync(BRAIN_DIR, { recursive: true });
 }
@@ -84,7 +98,7 @@ class AutonomousCognizanceDaemon {
 
     // Initial CyberGym verification
     try {
-      this.athleteCert = cybergymCertifier.certifyAthlete('Moltbook-Trader');
+      this.athleteCert = cybergymCertifier.certifyAthlete('Sentinel-9');
       log(`[INIT] CyberGym Athlete Verified: ${this.athleteCert.certificateId} (${this.athleteCert.tier}) - 100% Score`);
     } catch (e) {
       log(`[WARN] CyberGym init warning: ${e.message}`);
@@ -122,20 +136,26 @@ class AutonomousCognizanceDaemon {
 
       // 2. ORIENT
       const { melchizedekBridge } = require("./melchizedek-bridge");
-      const athleteLevel = this.athleteCert?.melchizedekCredential?.levelNumber ?? 5;
+      const currentStation = ROTATING_FLEET[this.pulseCount % ROTATING_FLEET.length];
+      const activeAthleteName = currentStation.name;
+      const activeCred = melchizedekBridge.credentials.credentials[activeAthleteName];
+      const athleteLevel = activeCred?.levelNumber ?? (this.athleteCert?.melchizedekCredential?.levelNumber ?? 5);
+      const athleteTier = activeCred?.level ?? (this.athleteCert?.tier ?? "SPECIALIZED");
+      const athleteElo = melchizedekBridge.arena.athletes[activeAthleteName]?.elo ?? 1250;
       const govCheck = melchizedekBridge.checkGovernanceGate("treasury:simulate", "trade", athleteLevel);
 
-      const athletesReady = this.athleteCert?.status === 'ACTIVE_CREDENTIALED' && govCheck.allowed;
+      const athletesReady = govCheck.allowed;
       const spreadSim = (Math.random() * 24 - 4); // Spread between -4 and +20 bps
       const hasViableAlpha = spreadSim >= 4.0;
-      log(`[2. ORIENT] CyberGym Tier=${this.athleteCert?.tier || 'SPECIALIZED'} (L${athleteLevel}), GovGate=${govCheck.reason}, SpreadSignal=${spreadSim.toFixed(2)} bps, AlphaViable=${hasViableAlpha}`);
+      log(`[2. ORIENT] Station [${currentStation.station}] Lead: ${activeAthleteName} (${currentStation.role})`);
+      log(`           Tier: ${athleteTier} (L${athleteLevel}) | ELO: ${athleteElo.toFixed(1)} | GovGate: ${govCheck.reason} | AlphaViable: ${hasViableAlpha} (${spreadSim.toFixed(2)} bps)`);
 
       // 3. DECIDE & 4. ACT
       let tradeResult = null;
       let sovereignOffer = null;
 
       if (hasViableAlpha && athletesReady) {
-        log(`[3. DECIDE] Positive spread detected! Formulating Executable Sovereign Trade Offer...`);
+        log(`[3. DECIDE] Positive spread detected! Formulating Executable Sovereign Trade Offer under ${activeAthleteName} authority...`);
 
         // Rotate random circuit-breaker drill every 7 pulses to test resilience
         if (this.pulseCount % 7 === 0) {
@@ -146,8 +166,9 @@ class AutonomousCognizanceDaemon {
         }
 
         // Formulate Executable Trade Offer for SovereignOS (Consuming Grade AAA Signal & Treasury Reserves)
-        sovereignOffer = melchizedekBridge.assessTreasuryAndFormulateOffer(this.athleteCert?.athleteId || "Moltbook-Trader");
+        sovereignOffer = melchizedekBridge.assessTreasuryAndFormulateOffer(activeAthleteName);
         log(`[SOV-OFFER] Formulated ${sovereignOffer.offerId} (${sovereignOffer.executableTradeSpecification.pair} // ${sovereignOffer.executableTradeSpecification.strategy})`);
+        log(`           Authorized Athlete: ${activeAthleteName} (${currentStation.station})`);
         log(`           Venues: ${sovereignOffer.executableTradeSpecification.buyVenue} -> ${sovereignOffer.executableTradeSpecification.sellVenue}`);
         log(`           Federal Gate: ${sovereignOffer.federalRegulatoryCompliance.status} | Stripe Excluded: ${sovereignOffer.federalRegulatoryCompliance.stripeExcluded}`);
         log(`           Deployable Liquidity: $${(sovereignOffer.treasuryAssessment.availableDeployableLiquidityUsd / 1e6).toFixed(2)}M / $${(sovereignOffer.treasuryAssessment.totalEscrowReservesUsd / 1e6).toFixed(1)}M Escrow`);

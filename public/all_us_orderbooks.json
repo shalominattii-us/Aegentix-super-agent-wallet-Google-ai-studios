@@ -1,0 +1,258 @@
+{
+  "timestamp": "2026-10-27T20:11:29.153Z",
+  "totalPairsDiscovered": 2595,
+  "exchangeSummaries": {
+    "Coinbase": {
+      "count": 517,
+      "sample": [
+        "DOGE-EUR",
+        "GODS-USD",
+        "BCH-USD",
+        "ALLO-USD",
+        "INDEX-USD",
+        "USDT-EUR",
+        "MEGA-USD",
+        "JUPITER-USD"
+      ]
+    },
+    "Kraken": {
+      "count": 1464,
+      "sample": [
+        "0GEUR",
+        "0GUSD",
+        "1INCHEUR",
+        "1INCHUSD",
+        "2ZEUR",
+        "2ZUSD",
+        "AAVEETH",
+        "AAVEEUR"
+      ]
+    },
+    "Gemini": {
+      "count": 349,
+      "sample": [
+        "2ZGUSD",
+        "2ZRLUSD",
+        "2ZUSD",
+        "2ZUSDC",
+        "AAVEGUSD",
+        "AAVERLUSD",
+        "AAVEUSD",
+        "AAVEUSDC"
+      ]
+    },
+    "BinanceUS": {
+      "count": 265,
+      "sample": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "XRPUSDT",
+        "BCHUSDT",
+        "LTCUSDT",
+        "BNBUSDT",
+        "ETHBTC",
+        "BNBBTC"
+      ]
+    }
+  },
+  "liveSampleOrderBooks": {
+    "Coinbase_BTC-USD": {
+      "exchange": "Coinbase",
+      "pair": "BTC-USD",
+      "bids": [
+        {
+          "price": 80665.48,
+          "size": 0.34347651
+        },
+        {
+          "price": 80664.27,
+          "size": 0.06900913
+        },
+        {
+          "price": 80664.1,
+          "size": 0.133338
+        }
+      ],
+      "asks": [
+        {
+          "price": 80665.49,
+          "size": 0.10706695
+        },
+        {
+          "price": 80667.11,
+          "size": 0.02479326
+        },
+        {
+          "price": 80671.11,
+          "size": 0.20710371
+        }
+      ],
+      "timestamp": 1793131888091
+    },
+    "Kraken_BTC-USD": {
+      "exchange": "Kraken",
+      "pair": "XXBTZUSD",
+      "bids": [
+        {
+          "price": 80663.4,
+          "size": 1.168
+        },
+        {
+          "price": 80663.3,
+          "size": 0.004
+        },
+        {
+          "price": 80662.8,
+          "size": 0.926
+        }
+      ],
+      "asks": [
+        {
+          "price": 80663.5,
+          "size": 0.025
+        },
+        {
+          "price": 80664,
+          "size": 0.001
+        },
+        {
+          "price": 80664.3,
+          "size": 0.186
+        }
+      ],
+      "timestamp": 1793131888241
+    },
+    "Gemini_BTC-USD": {
+      "exchange": "Gemini",
+      "pair": "BTCUSD",
+      "bids": [
+        {
+          "price": 80676.13,
+          "size": 0.27276564
+        },
+        {
+          "price": 80674.8,
+          "size": 0.01355312
+        },
+        {
+          "price": 80664.31,
+          "size": 0.03254067
+        }
+      ],
+      "asks": [
+        {
+          "price": 80676.14,
+          "size": 0.0530952
+        },
+        {
+          "price": 80678,
+          "size": 3
+        },
+        {
+          "price": 80680.56,
+          "size": 0.13016534
+        }
+      ],
+      "timestamp": 1793131888299
+    },
+    "BinanceUS_BTC-USDT": {
+      "exchange": "BinanceUS",
+      "pair": "BTCUSDT",
+      "bids": [
+        {
+          "price": 80775.85,
+          "size": 0.0003
+        },
+        {
+          "price": 80775.84,
+          "size": 0.00019
+        },
+        {
+          "price": 80775.75,
+          "size": 0.00329
+        }
+      ],
+      "asks": [
+        {
+          "price": 80775.87,
+          "size": 0.02478
+        },
+        {
+          "price": 80776,
+          "size": 0.0033
+        },
+        {
+          "price": 80776.14,
+          "size": 0.00328
+        }
+      ],
+      "timestamp": 1793131888682
+    },
+    "Coinbase_SOL-USD": {
+      "exchange": "Coinbase",
+      "pair": "SOL-USD",
+      "bids": [
+        {
+          "price": 101.06,
+          "size": 41.69
+        },
+        {
+          "price": 101.05,
+          "size": 42.703365
+        },
+        {
+          "price": 101.04,
+          "size": 179.6753694
+        }
+      ],
+      "asks": [
+        {
+          "price": 101.07,
+          "size": 11.7337341
+        },
+        {
+          "price": 101.08,
+          "size": 114.42779588
+        },
+        {
+          "price": 101.09,
+          "size": 205.39820618
+        }
+      ],
+      "timestamp": 1793131889004
+    },
+    "Kraken_SOL-USD": {
+      "exchange": "Kraken",
+      "pair": "SOLUSD",
+      "bids": [
+        {
+          "price": 101.06,
+          "size": 115.474
+        },
+        {
+          "price": 101.05,
+          "size": 306.009
+        },
+        {
+          "price": 101.04,
+          "size": 172.669
+        }
+      ],
+      "asks": [
+        {
+          "price": 101.07,
+          "size": 102.907
+        },
+        {
+          "price": 101.08,
+          "size": 63.3
+        },
+        {
+          "price": 101.09,
+          "size": 39.906
+        }
+      ],
+      "timestamp": 1793131889153
+    }
+  }
+}

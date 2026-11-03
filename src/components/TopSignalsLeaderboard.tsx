@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import { 
+import {
+  Coins, 
   Trophy, 
   Flame, 
   ArrowRight, 
@@ -44,8 +45,9 @@ import { SignalSuccessTimelineView } from './SignalSuccessTimelineView';
 
 interface TopSignalsLeaderboardProps {
   signals: AutonomousSignal[];
-  onExecuteSignal: (signalId: string) => void;
+  onExecuteSignal: (signalId: string, signalObj?: AutonomousSignal) => void;
   onBatchExecuteTop: (count: number) => void;
+  onHarvestAll?: () => void;
   onFormulateTopSignals: () => void;
   isExecuting: boolean;
   isFormulating: boolean;
@@ -55,6 +57,7 @@ export const TopSignalsLeaderboard: React.FC<TopSignalsLeaderboardProps> = ({
   signals,
   onExecuteSignal,
   onBatchExecuteTop,
+  onHarvestAll,
   onFormulateTopSignals,
   isExecuting,
   isFormulating,
@@ -2168,7 +2171,7 @@ export const TopSignalsLeaderboard: React.FC<TopSignalsLeaderboardProps> = ({
 
               {apexSignal.status === 'PENDING' ? (
                 <button
-                  onClick={() => onExecuteSignal(apexSignal.id)}
+                  onClick={() => onExecuteSignal(apexSignal.id, apexSignal)}
                   disabled={isExecuting}
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded text-xs transition-colors shadow-md shadow-emerald-500/20 disabled:opacity-50"
                 >
@@ -2286,7 +2289,16 @@ export const TopSignalsLeaderboard: React.FC<TopSignalsLeaderboardProps> = ({
             className="flex items-center gap-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500/40 rounded text-xs transition-colors disabled:opacity-50"
           >
             <Zap className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Batch Execute Top 3</span>
+            <span>Batch Top 3</span>
+          </button>
+          <button
+            onClick={onHarvestAll || (() => onBatchExecuteTop(pendingCount))}
+            disabled={isExecuting || pendingCount === 0}
+            className="flex items-center gap-1.5 px-3.5 py-1 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold border border-emerald-400/60 rounded text-xs transition-all shadow-md shadow-emerald-950/40 cursor-pointer disabled:opacity-50"
+            title="Harvest all profitable market signals and rake directly into the Treasury Vault"
+          >
+            <Coins className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            <span>Rake Markets to Vault ({pendingCount})</span>
           </button>
         </div>
       </div>
@@ -2395,7 +2407,7 @@ export const TopSignalsLeaderboard: React.FC<TopSignalsLeaderboardProps> = ({
 
                   {isPending ? (
                     <button
-                      onClick={() => onExecuteSignal(sig.id)}
+                      onClick={() => onExecuteSignal(sig.id, sig)}
                       disabled={isExecuting}
                       className="flex items-center gap-1 px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded text-xs transition-colors disabled:opacity-50"
                     >

@@ -7,11 +7,13 @@ Designed for system Python / ROCm hardware or pure-Python standalone execution.
 """
 
 import json
+import os
 import re
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import sys
 
 PORT = 9003
+MAX_CONTENT_LENGTH = 65536
 
 
 class HereticBrainHandler(BaseHTTPRequestHandler):
@@ -45,6 +47,10 @@ class HereticBrainHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/generate":
             content_length = int(self.headers.get("Content-Length", 0))
+            if content_length < 0 or content_length > MAX_CONTENT_LENGTH:
+                self._set_headers(413)
+                self.wfile.write(json.dumps({"error": "Payload Too Large"}).encode("utf-8"))
+                return
             body_bytes = self.reading_body(content_length)
             
             try:
@@ -101,9 +107,10 @@ class HereticBrainHandler(BaseHTTPRequestHandler):
 
 
 def run(port=PORT):
-    server_address = ("0.0.0.0", port)
+    host = os.environ.get("HERETIC_HOST", "127.0.0.1")
+    server_address = (host, port)
     httpd = HTTPServer(server_address, HereticBrainHandler)
-    print(f"[*] HERETIC INFERENCE SERVER (The Brain) active on http://0.0.0.0:{port}")
+    print(f"[*] HERETIC INFERENCE SERVER (The Brain) active on http://{host}:{port}")
     print("[*] Ready for Autonomous Heartbeat queries from Orchestrator...")
     try:
         httpd.serve_forever()

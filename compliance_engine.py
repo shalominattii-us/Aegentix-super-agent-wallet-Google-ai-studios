@@ -7,27 +7,33 @@ before autonomous signals can reach the DEX/CEX execution layer.
 Provides nanotransaction auditing, metrics, and immutable audit trail.
 """
 
+import hmac
 import json
 import time
 import uuid
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import sys
+import os
 from security.agent_security_engine import SecurityEngine
 
 PORT = 9004
+MAX_CONTENT_LENGTH = 65536
 engine = SecurityEngine()
 audit_trail = []
 
-# Authentication
-API_KEY = "aegentix-sovereign-gate-key-2026"
+# Authentication (Fail-Closed)
+_GATE_KEY_PATH = os.path.join(os.path.expanduser("~"), ".aegentix-dev-keys", "gate_api.key")
+API_KEY = (os.environ.get("AEGENTIX_GATE_API_KEY") or (open(_GATE_KEY_PATH).read().strip() if os.path.exists(_GATE_KEY_PATH) else "")).strip()
+if not API_KEY:
+    raise RuntimeError(f"CRITICAL: Missing Gate API Key at {_GATE_KEY_PATH} or AEGENTIX_GATE_API_KEY")
 AUTH_HEADER = "X-API-Key"
 
 
 class ComplianceGateHandler(BaseHTTPRequestHandler):
     def _check_auth(self):
-        """Validate API key authentication."""
-        auth_key = self.headers.get(AUTH_HEADER)
-        if auth_key != API_KEY:
+        """Validate API key authentication in constant time (fail-closed)."""
+        auth_key = (self.headers.get(AUTH_HEADER) or "").strip()
+        if not auth_key or not hmac.compare_digest(auth_key.encode("utf-8"), API_KEY.encode("utf-8")):
             self._set_headers(401)
             self.wfile.write(json.dumps({
                 "error": "Unauthorized",
@@ -41,7 +47,7 @@ class ComplianceGateHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key")
         self.end_headers()
 
     def do_OPTIONS(self):
@@ -93,13 +99,19 @@ class ComplianceGateHandler(BaseHTTPRequestHandler):
         # Require authentication for all POST endpoints
         if not self._check_auth():
             return
-            
+
         content_length = int(self.headers.get("Content-Length", 0))
+        if content_length < 0 or content_length > MAX_CONTENT_LENGTH:
+            self._set_headers(413)
+            self.wfile.write(json.dumps({"error": "Payload Too Large"}).encode("utf-8"))
+            return
         body = self.rfile.read(content_length) if content_length > 0 else b"{}"
         try:
             data = json.loads(body.decode("utf-8"))
         except Exception:
-            data = {}
+            self._set_headers(400)
+            self.wfile.write(json.dumps({"error": "Invalid JSON body"}).encode("utf-8"))
+            return
 
         if self.path in ("/nanotransaction", "/nanotransactions"):
             actor_id = data.get("actor_id", "actor-001")
@@ -108,6 +120,16 @@ class ComplianceGateHandler(BaseHTTPRequestHandler):
 
             # Record event in security engine
             engine.record_event(actor_id, action_type, context)
+
+            # Enforce behavioral anomaly check before signing nanotransaction block
+            if engine.check_anomalies():
+                self._set_headers(403)
+                self.wfile.write(json.dumps({
+                    "status": "BLOCKED",
+                    "reason": "Behavioral anomaly detected (Rate velocity breach)",
+                    "gate_approved": False,
+                }).encode("utf-8"))
+                return
 
             # Check invariants & mint cryptographic HMAC gate block
             gate_block = engine.sign_gate_block(actor_id, action_type, context)
@@ -137,7 +159,6 @@ class ComplianceGateHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(audit_record).encode("utf-8"))
 
         elif self.path in ("/gate/verify", "/verify"):
-            signal_text = data.get("signal", "")
             actor_id = data.get("actor_id", "actor-001 [SOVEREIGN]")
 
             # 1. Record event
@@ -176,13 +197,14 @@ class ComplianceGateHandler(BaseHTTPRequestHandler):
 
 
 def run(port=PORT):
-    server_address = ("0.0.0.0", port)
+    host = os.environ.get("COMPLIANCE_HOST", "127.0.0.1")
+    server_address = (host, port)
     try:
         httpd = HTTPServer(server_address, ComplianceGateHandler)
     except OSError as e:
         print(f"[*] COMPLIANCE ENGINE: Port {port} already bound or unavailable ({e}). Continuing...")
         return
-    print(f"[*] COMPLIANCE ENGINE (The Gate) active on http://0.0.0.0:{port}")
+    print(f"[*] COMPLIANCE ENGINE (The Gate) active on http://{host}:{port}")
     print(f"[*] Current Blockchain Height: #{engine.current_height}")
     try:
         httpd.serve_forever()
@@ -194,4 +216,3 @@ def run(port=PORT):
 if __name__ == "__main__":
     port_arg = int(sys.argv[1]) if len(sys.argv) > 1 else PORT
     run(port_arg)
-

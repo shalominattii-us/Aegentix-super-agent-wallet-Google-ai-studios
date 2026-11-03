@@ -92,7 +92,7 @@ switch ($Command.ToLower().TrimStart('-')) {
     }
 
     { $_ -in "fix", "restart", "recover" } {
-        Write-Host "[*] Auto-Healing Sovereign Core, Hermes Engine, and Space Bunny..." -ForegroundColor Cyan
+        Write-Host "[*] Auto-Healing Sovereign Core, Hermes Engine, and Antigravity Deliberation Engine..." -ForegroundColor Cyan
         Write-Host "    [1/3] Terminating any orphaned stuck Node / Python processes on ports 7001, 8081, 9001..." -ForegroundColor Gray
         try {
             $ports = @(7001, 8081, 9001, 3000)
@@ -117,10 +117,10 @@ switch ($Command.ToLower().TrimStart('-')) {
             Write-Host "          [OK] Local Hermes circuit breaker reset." -ForegroundColor Green
         }
 
-        Write-Host "    [3/3] Re-binding Space Bunny Alpha Stealth Engine..." -ForegroundColor Gray
-        Write-Host "          [OK] Space Bunny Alpha: REASONING OFF (Direct Reflex) restored." -ForegroundColor Green
+        Write-Host "    [3/3] Re-binding Antigravity Deliberation Engine..." -ForegroundColor Gray
+        Write-Host "          [OK] Antigravity Deliberation Engine: Fail-Closed Sovereign Reflex restored." -ForegroundColor Green
         Write-Host ""
-        Write-Host "[SUCCESS] Sovereign Engine & Space Bunny Fully Restored!" -ForegroundColor Green
+        Write-Host "[SUCCESS] Sovereign Engine & Antigravity Deliberation Engine Fully Restored!" -ForegroundColor Green
         Write-Host "Run 'sov status' to verify." -ForegroundColor Cyan
     }
 
@@ -175,7 +175,7 @@ switch ($Command.ToLower().TrimStart('-')) {
         Write-Host "  sov status         - Show swarm status and verification hash" -ForegroundColor Gray
         Write-Host "  sov start          - Launch local Sovereign core daemons" -ForegroundColor Gray
         Write-Host "  sov daemon         - Run bi-directional sync listener (Push & Receive)" -ForegroundColor Gray
-        Write-Host "  sov fix / restart  - Kill stuck ports & restore Hermes & Space Bunny" -ForegroundColor Gray
+        Write-Host "  sov fix / restart  - Kill stuck ports & restore Hermes & Antigravity Deliberation Engine" -ForegroundColor Gray
         Write-Host "  sov bridge         - Connect local machine to AI Studio sandbox" -ForegroundColor Gray
         Write-Host "  sov sync           - Sync local files with AI Studio container" -ForegroundColor Gray
         Write-Host "  sov ooda           - Dispatch autonomous OODA loop cycle" -ForegroundColor Gray

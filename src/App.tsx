@@ -45,7 +45,6 @@ import { TableOfContentsModal } from './components/TableOfContentsModal';
 import { ExportAppModal } from './components/ExportAppModal';
 import { WorkspaceNavigator } from './components/WorkspaceNavigator';
 import { MetaCognitiveEngine } from './components/MetaCognitiveEngine';
-import { SpaceBunnyAlphaSuite } from './components/SpaceBunnyAlphaSuite';
 import { DesktopDeviceMappingSuite } from './components/DesktopDeviceMappingSuite';
 import { KolibriOfflineSuite } from './components/KolibriOfflineSuite';
 import { CyberGymProgressionSuite } from './components/CyberGymProgressionSuite';
@@ -59,6 +58,7 @@ import { ZeroCapitalFlywheelSuite } from './components/ZeroCapitalFlywheelSuite'
 import { SovereignOriginNodeSuite } from './components/SovereignOriginNodeSuite';
 import { AntiTraffickingSentinelSuite } from './components/AntiTraffickingSentinelSuite';
 import { XamanRevenueBridgeView } from './components/XamanRevenueBridgeView';
+import { DesktopDeepmindSuite } from './components/DesktopDeepmindSuite';
 import { 
   WalletBalances, 
   MarketAsset, 
@@ -71,7 +71,7 @@ import {
   LLMStatus,
   OodaTelemetryState
 } from './types';
-import { AlertTriangle, CheckCircle2, Info, Trophy, Search, Radio, Layers, Cpu, Activity, Globe, ShieldAlert, Music, Network, Bot, Sliders, HardDrive, Mail, Workflow, Sparkles, Crosshair, Folder, Ship, Plane, HeartPulse, Landmark, TrendingUp, Share2, Atom, Brain, Award, Flag, Dumbbell, Github, Boxes, Users, Gamepad2, BookOpen } from 'lucide-react';
+import { Maximize2, AlertTriangle, CheckCircle2, Info, Trophy, Search, Radio, Layers, Cpu, Activity, Globe, ShieldAlert, Music, Network, Bot, Sliders, HardDrive, Mail, Workflow, Sparkles, Crosshair, Folder, Ship, Plane, HeartPulse, Landmark, TrendingUp, Share2, Atom, Brain, Award, Flag, Dumbbell, Github, Boxes, Users, Gamepad2, BookOpen, ExternalLink } from 'lucide-react';
 
 function deduplicateById<T extends { id?: string }>(items: T[]): T[] {
   if (!Array.isArray(items)) return [];
@@ -116,6 +116,33 @@ export default function App() {
     activeIndicators: [],
   });
   const [exchangeBridges, setExchangeBridges] = useState<ExchangeBridge[]>([]);
+  // Responsive Display Framing for Handhelds (ROG Ally X) & Laptops
+  const [uiZoom, setUiZoom] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('aegentix_ui_zoom');
+      if (saved) return parseFloat(saved);
+      // Automatically default to 75% on handheld / 1080p scaled displays
+      if (typeof window !== 'undefined' && window.innerWidth <= 1400) {
+        return 0.75;
+      }
+      return 0.85;
+    } catch {
+      return 0.75;
+    }
+  });
+
+  // Scale via root font-size (rem) instead of CSS zoom so layout always fills the real viewport
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${16 * uiZoom}px`;
+    return () => { document.documentElement.style.fontSize = ''; };
+  }, [uiZoom]);
+
+  const handleSetZoom = (newZoom: number) => {
+    setUiZoom(newZoom);
+    try {
+      localStorage.setItem('aegentix_ui_zoom', String(newZoom));
+    } catch {}
+  };
 
   // Agent Configurations
   const [isAutopilot, setIsAutopilotState] = useState<boolean>(() => {
@@ -173,9 +200,15 @@ export default function App() {
 
   const resolveTabFromInput = (input?: string | null): any => {
     if (!input) return null;
-    const clean = input.replace(/^[/#]+/, '').trim().toLowerCase();
+    const clean = input.replace(/^[/#]+/, '').replace(/\.html?$/i, '').trim().toLowerCase();
+    const normalized = clean.replace(/-/g, '_');
     if (!clean) return null;
     const aliasMap: Record<string, string> = {
+      'sovereign_command': 'SOVEREIGN_COMMAND',
+      'sovereign-command': 'SOVEREIGN_COMMAND',
+      'sovereign_command.html': 'SOVEREIGN_COMMAND',
+      'sovereign-command.html': 'SOVEREIGN_COMMAND',
+      'command': 'SOVEREIGN_COMMAND',
       'medical': 'HEALTHCARE_NET',
       'healthcare': 'HEALTHCARE_NET',
       'healthcare_net': 'HEALTHCARE_NET',
@@ -197,8 +230,6 @@ export default function App() {
       'halo': 'HALO_CE_VISOR',
       'halo_ce_visor': 'HALO_CE_VISOR',
       'lounge': 'HALO_CE_VISOR',
-      'spacebunny': 'SPACE_BUNNY_ALPHA',
-      'space_bunny_alpha': 'SPACE_BUNNY_ALPHA',
       'herdr': 'HERDR',
       'rog': 'ROG_CREATOR_SYSTEM',
       'rog_creator_system': 'ROG_CREATOR_SYSTEM',
@@ -213,8 +244,6 @@ export default function App() {
       'forge': 'GITHUB_FORGE',
       'github_forge': 'GITHUB_FORGE',
       'sovereign_portal': 'SOVEREIGN_PORTAL',
-      'command': 'SOVEREIGN_COMMAND',
-      'sovereign_command': 'SOVEREIGN_COMMAND',
       'kolibri': 'KOLIBRI_PLATFORM',
       'kolibri_platform': 'KOLIBRI_PLATFORM',
       'ooda': 'OODA_LOOP',
@@ -273,8 +302,14 @@ export default function App() {
       'rwb7': 'XAMAN_REVENUE_BRIDGE',
       'xumm': 'XAMAN_REVENUE_BRIDGE',
       'xaman_revenue_bridge': 'XAMAN_REVENUE_BRIDGE',
+      'deepmind': 'DESKTOP_DEEPMIND',
+      'desktop_deepmind': 'DESKTOP_DEEPMIND',
+      'desktop-deepmind': 'DESKTOP_DEEPMIND',
+      'grant': 'DESKTOP_DEEPMIND',
+      'proposal': 'DESKTOP_DEEPMIND',
     };
     if (aliasMap[clean]) return aliasMap[clean];
+    if (aliasMap[normalized]) return aliasMap[normalized];
     const upper = clean.toUpperCase();
     return upper;
   };
@@ -291,10 +326,10 @@ export default function App() {
         if (fromStored) return fromStored;
       }
     } catch {}
-    return 'PORTAL_LANDING';
+    return 'AEGENTIS_OS';
   };
 
-  const [centerTab, setCenterTabState] = useState<'PORTAL_LANDING' | 'JARVIS_BUILDER' | 'LIVE_TELEMETRY' | 'AEGENTIS_OS' | 'HERDR' | 'ROG_CREATOR_SYSTEM' | 'DEVICE_SANDBOX_MAPPING' | 'CYBERNETICS' | 'AEGIS_CIPHER' | 'ENDPOINT_SECURITY' | 'OODA_LOOP' | 'TOP_SIGNALS' | 'SYMPHONY' | 'AGENT_MESH' | 'AUTOHEDGE' | 'RISK_DASHBOARD' | 'GOOGLE_DRIVE' | 'GMAIL' | 'HEATMAP' | 'MOLTBOOK' | 'RESEARCHER' | 'META_COGNITIVE' | 'SPACE_BUNNY_ALPHA' | 'ALL_FEEDS' | 'LEDGER' | 'HALO_CE_VISOR' | 'USER_PROFILE_MAP' | 'AGENTS_OF_CHAOS' | 'SOVEREIGN_COMMAND' | 'FAA_SOV_LICENSE' | 'SOVEREIGN_PORTAL' | 'OMNICYBERDEX' | 'HEALTHCARE_NET' | 'FEDERAL_CRYPTO' | 'PINNACLE_DERIVATIVES' | 'TRADING_COMMAND' | 'PORTFOLIO_GROWTH_PLAN' | 'DAG_FEDERAL_NODE_STATUS' | 'GOV_OPPORTUNITIES' | 'AGENTIC_AMERICA' | 'CYBERGYM_PROGRESSION' | 'GITHUB_FORGE' | 'KOLIBRI_PLATFORM' | 'NEXUS_REGISTRY' | 'ZERO_CAP_FLYWHEEL' | 'SOVEREIGN_ORIGIN_NODE' | 'ANTI_TRAFFICKING_SENTINEL' | 'XAMAN_REVENUE_BRIDGE'>(getInitialTab);
+  const [centerTab, setCenterTabState] = useState<'PORTAL_LANDING' | 'JARVIS_BUILDER' | 'DESKTOP_DEEPMIND' | 'LIVE_TELEMETRY' | 'AEGENTIS_OS' | 'HERDR' | 'ROG_CREATOR_SYSTEM' | 'DEVICE_SANDBOX_MAPPING' | 'CYBERNETICS' | 'AEGIS_CIPHER' | 'ENDPOINT_SECURITY' | 'OODA_LOOP' | 'TOP_SIGNALS' | 'SYMPHONY' | 'AGENT_MESH' | 'AUTOHEDGE' | 'RISK_DASHBOARD' | 'GOOGLE_DRIVE' | 'GMAIL' | 'HEATMAP' | 'MOLTBOOK' | 'RESEARCHER' | 'META_COGNITIVE' | 'ALL_FEEDS' | 'LEDGER' | 'HALO_CE_VISOR' | 'USER_PROFILE_MAP' | 'AGENTS_OF_CHAOS' | 'SOVEREIGN_COMMAND' | 'FAA_SOV_LICENSE' | 'SOVEREIGN_PORTAL' | 'OMNICYBERDEX' | 'HEALTHCARE_NET' | 'FEDERAL_CRYPTO' | 'PINNACLE_DERIVATIVES' | 'TRADING_COMMAND' | 'PORTFOLIO_GROWTH_PLAN' | 'DAG_FEDERAL_NODE_STATUS' | 'GOV_OPPORTUNITIES' | 'AGENTIC_AMERICA' | 'CYBERGYM_PROGRESSION' | 'GITHUB_FORGE' | 'KOLIBRI_PLATFORM' | 'NEXUS_REGISTRY' | 'ZERO_CAP_FLYWHEEL' | 'SOVEREIGN_ORIGIN_NODE' | 'ANTI_TRAFFICKING_SENTINEL' | 'XAMAN_REVENUE_BRIDGE'>(getInitialTab);
 
   const setCenterTab = (tab: any) => {
     setCenterTabState(tab);
@@ -399,7 +434,7 @@ export default function App() {
               const autoMsg = `[Nonstop Autopilot] Captured +$${payload.latestAlpha} USD on ${payload.targetPair} (Spread: ${payload.spreadPct}%). Block #${payload.blockHeight}.`;
               setThoughtLogs((prev) => [
                 {
-                  id: `log-auto-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                  id: 'log-auto-$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())-$([Guid]::NewGuid().ToString().Substring(0,4))',
                   timestamp: new Date().toISOString(),
                   step: 'EXECUTE',
                   stage: 'EXECUTE',
@@ -481,7 +516,7 @@ export default function App() {
         // Add to thought log
         setThoughtLogs((prev) => deduplicateById([
           {
-            id: `th-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            id: `th-${Date.now()}`,
             timestamp: new Date().toISOString(),
             level: 'ALERT',
             step: 'ORIENT & DECIDE',
@@ -496,9 +531,11 @@ export default function App() {
         });
         setTimeout(() => setAlertBanner(null), 5000);
 
-        // Autopilot Auto-Execution Check
+        // Autopilot Auto-Execution Check (live price only — no constant 2680 fallback)
         if (isAutopilot && signalData.signal.confidence >= 0.85) {
-          const estimatedValue = signalData.signal.amount * 2680; // approximate USD value
+          const liveAsset = (researchData.assets || marketFeed).find((a: MarketAsset) => a.symbol === signalData.signal.pair);
+          const livePrice = liveAsset?.cexPrice || 0;
+          const estimatedValue = signalData.signal.amount * livePrice;
           if (estimatedValue > 1000) {
             // Mandate Hardware Sign-off
             setPendingHardwareTrade({
@@ -534,29 +571,55 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isAutopilot, cycleIntervalSeconds, strategy, maxSlippage]);
 
-  // Execute a signal
-  const executeSignal = async (signalId: string) => {
+  // Execute a signal via Agentic Superintelligence Tool Call & Nano-Transaction Rewarding
+  const executeSignal = async (signalIdOrSignal: string | AutonomousSignal, extraSignalObj?: AutonomousSignal) => {
     setIsExecutingTrade(true);
     try {
+      const sigObj = typeof signalIdOrSignal === 'object' 
+        ? signalIdOrSignal 
+        : (extraSignalObj || signals.find(s => s.id === signalIdOrSignal));
+      const signalId = typeof signalIdOrSignal === 'string' ? signalIdOrSignal : signalIdOrSignal.id;
+
       const res = await fetch('/api/agent/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signalId }),
+        body: JSON.stringify({ 
+          signalId,
+          signal: sigObj,
+          customTrade: sigObj ? {
+            pair: sigObj.pair,
+            amount: sigObj.amount,
+            action: sigObj.action,
+            estimatedProfitUsd: sigObj.estimatedProfitUsd,
+            sourceVenue: sigObj.sourceVenue,
+            targetVenue: sigObj.targetVenue,
+            asset: sigObj.asset,
+            spreadPct: sigObj.spreadPct,
+          } : undefined
+        }),
       });
       const data = await res.json();
       if (data.success) {
         setTransactions((prev) => deduplicateById([data.transaction, ...prev]));
-        setComplianceChain((prev) => [...prev, data.complianceBlock]);
+        if (data.complianceBlock) {
+          setComplianceChain((prev) => [...prev, data.complianceBlock]);
+        }
         setBalances(data.updatedBalances);
         setSignals((prev) =>
-          prev.map((s) => (s.id === signalId ? { ...s, status: 'EXECUTED' } : s))
+          prev.map((s) => (s.id === signalId || s.pair === sigObj?.pair ? { ...s, status: 'EXECUTED' } : s))
         );
 
+        fetchState();
+
+        const opSplit = data.rewarding?.humanOperatorSplitUsd || (data.transaction.amount * 17.5).toFixed(2);
+        const aiSplit = data.rewarding?.aiAgentReserveUsd || '5.00';
+        const nanoSeq = data.nanoReceipt?.sequence || '4575';
+
         setAlertBanner({
-          message: `Executed cross-exchange trade! Realized Net Alpha: +$${data.transaction.executionPrice ? (data.transaction.amount * 24.5).toFixed(2) : '33.60'}`,
+          message: `[TOOL CALL COMMITTED] Human-AI Arbitrage on ${data.transaction.pair}! Operator Alpha: +${opSplit} | AI Reserve: +${aiSplit} | Ephemeral Nano-Tx #${nanoSeq} Verified`,
           type: 'SUCCESS',
         });
-        setTimeout(() => setAlertBanner(null), 5000);
+        setTimeout(() => setAlertBanner(null), 6000);
       }
     } catch (err) {
       console.error('Execution error:', err);
@@ -565,11 +628,15 @@ export default function App() {
     }
   };
 
-  // Flash Crash stress test simulator
+  // Flash Crash stress test drill
   const handleStressTest = async () => {
     setIsStressTesting(true);
     try {
-      const res = await fetch('/api/agent/stress-test', { method: 'POST' });
+      const res = await fetch('/api/agent/stress-test?drill=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Aegentix-Drill': 'true' },
+        body: JSON.stringify({ drill: true }),
+      });
       const data = await res.json();
       if (data.success) {
         setBalances(data.balances);
@@ -645,13 +712,37 @@ export default function App() {
         setBalances(data.updatedBalances);
         fetchState();
         setAlertBanner({
-          message: `Batch executed Top ${data.executedCount} Signals! Realized Net Alpha: +$${data.totalProfitUsd.toFixed(2)}`,
+          message: `Batch executed Top ${data.executedCount} Signals! Realized Net Alpha: +${data.totalProfitUsd.toFixed(2)}`,
           type: 'SUCCESS',
         });
         setTimeout(() => setAlertBanner(null), 6000);
       }
     } catch (err) {
       console.error('Error in batch execute:', err);
+    } finally {
+      setIsExecutingTrade(false);
+    }
+  };
+
+  const handleHarvestAll = async () => {
+    setIsExecutingTrade(true);
+    try {
+      const res = await fetch('/api/agent/harvest-all', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setBalances(data.updatedBalances);
+        if (data.complianceBlock) {
+          setComplianceChain((prev) => [...prev, data.complianceBlock]);
+        }
+        fetchState();
+        setAlertBanner({
+          message: `[MARKET RAKE HARVESTED] Successfully swept ${data.harvestedCount} signals! Realized Net Alpha: +${data.totalHarvestedUsd.toFixed(2)} deposited into Sovereign Treasury Vault.`,
+          type: 'SUCCESS',
+        });
+        setTimeout(() => setAlertBanner(null), 8000);
+      }
+    } catch (err) {
+      console.error('Harvest error:', err);
     } finally {
       setIsExecutingTrade(false);
     }
@@ -669,7 +760,7 @@ export default function App() {
   const isOutwardPortalMode = ['PORTAL_LANDING', 'HEALTHCARE_NET', 'PINNACLE_DERIVATIVES', 'JARVIS_BUILDER', 'TRADING_COMMAND', 'LEDGER', 'NEXUS_REGISTRY', 'ZERO_CAP_FLYWHEEL', 'SOVEREIGN_ORIGIN_NODE', 'ANTI_TRAFFICKING_SENTINEL', 'XAMAN_REVENUE_BRIDGE'].includes(centerTab);
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#080B10] text-slate-200 flex flex-col font-mono selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-dvh w-full max-w-full overflow-x-clip min-w-[320px] bg-[#080B10] text-slate-200 flex flex-col font-mono selection:bg-cyan-500/30 selection:text-cyan-200">
       {/* Dynamic Header: Minimalist Editorial Header in Portal / Origin Mode vs Technical Header in Cyberdeck */}
       {isOutwardPortalMode ? (
         <MinimalHeader
@@ -694,13 +785,13 @@ export default function App() {
           llmStatus={llmStatus}
           isExpandedCanvas={isExpandedCanvas}
           onToggleExpandedCanvas={() => setIsExpandedCanvas(!isExpandedCanvas)}
-          onOpenSpaceBunny={() => setCenterTab('SPACE_BUNNY_ALPHA')}
           onOpenDeviceMapping={() => setCenterTab('DEVICE_SANDBOX_MAPPING')}
           onOpenLounge={() => setCenterTab('HALO_CE_VISOR')}
           onOpenMedical={() => setCenterTab('HEALTHCARE_NET')}
           onOpenPinnacle={() => setCenterTab('PINNACLE_DERIVATIVES')}
           onOpenLedger={() => setCenterTab('LEDGER')}
           onOpenTrading={() => setCenterTab('TRADING_COMMAND')}
+          onOpenJarvis={() => setCenterTab('JARVIS_BUILDER')}
         />
       )}
 
@@ -732,15 +823,95 @@ export default function App() {
 
       {/* Secondary Cyberdeck Utility Bar - only rendered inside Operator Cyberdeck */}
       {!isOutwardPortalMode && (
-        <div className="bg-[#0B0F17] border-b border-slate-800/80 px-4 sm:px-6 py-2.5 sticky top-0 z-30 shadow-lg backdrop-blur-md">
-          <div className="max-w-[1720px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="bg-[#0B0F17] border-b border-slate-800/80 px-3 sm:px-6 py-2 sticky top-0 z-30 shadow-lg backdrop-blur-md w-full max-w-full overflow-x-clip">
+          <div className="max-w-[1720px] mx-auto flex flex-wrap items-center justify-between gap-2.5">
             {/* Left: Outward Portal Apps Navigation */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1 hidden lg:inline">MODES:</span>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none max-w-full shrink">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1 hidden lg:inline shrink-0">MODES:</span>
+
+              {/* JARVIS Studio Quick Launcher */}
+              <button
+                onClick={() => setCenterTab('JARVIS_BUILDER')}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
+                  centerTab === 'JARVIS_BUILDER'
+                    ? 'bg-cyan-500/25 text-cyan-200 border-cyan-500/60 shadow-sm shadow-cyan-500/20'
+                    : 'bg-slate-900/80 text-cyan-400 hover:text-cyan-200 hover:bg-slate-800 border-cyan-900/60'
+                }`}
+              >
+                <span>🤖</span>
+                <span>JARVIS Studio</span>
+              </button>
+
+              {/* JARVIS Full Tactical HUD */}
+              <a
+                href="http://localhost:3142"
+                target="_blank"
+                rel="noreferrer"
+                className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer bg-cyan-950/60 text-cyan-300 hover:text-white hover:bg-cyan-900/80 border-cyan-500/50 shadow-sm shadow-cyan-500/20"
+                title="Launch J.A.R.V.I.S. Autonomous AI Dashboard (http://localhost:3142)"
+              >
+                <span>🛡️</span>
+                <span>JARVIS HUD (:3142)</span>
+                <ExternalLink className="w-3 h-3 opacity-80" />
+              </a>
+
+              {/* Desktop DeepMind Suite */}
+              <button
+                onClick={() => setCenterTab('DESKTOP_DEEPMIND')}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
+                  centerTab === 'DESKTOP_DEEPMIND'
+                    ? 'bg-blue-600/30 text-blue-200 border-blue-400/80 shadow-md shadow-blue-500/25 ring-1 ring-blue-400'
+                    : 'bg-slate-900/80 text-blue-400 hover:text-blue-200 hover:bg-slate-800 border-blue-900/60'
+                }`}
+                title="Google DeepMind Desktop Suite - Absolute Permeable Space"
+              >
+                <span>🧠</span>
+                <span className="font-semibold tracking-wide">Desktop DeepMind</span>
+              </button>
+
+              {/* Immersive Visor Overlay HUD */}
+              <button
+                onClick={() => setCenterTab('HALO_CE_VISOR')}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
+                  centerTab === 'HALO_CE_VISOR'
+                    ? 'bg-emerald-600/30 text-emerald-200 border-emerald-400/80 shadow-md shadow-emerald-500/25 ring-1 ring-emerald-400'
+                    : 'bg-slate-900/80 text-emerald-400 hover:text-emerald-200 hover:bg-slate-800 border-emerald-900/60'
+                }`}
+                title="MJOLNIR Mark V Immersive Tactical Desktop Overlay Visor"
+              >
+                <span>🪖</span>
+                <span className="font-semibold tracking-wide">Immersive Visor HUD</span>
+              </button>
+
+              {/* Apollo Voice (:8765) Direct Link */}
+              <a
+                href="http://localhost:8765"
+                target="_blank"
+                rel="noreferrer"
+                className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer bg-amber-950/40 text-amber-300 hover:text-white hover:bg-amber-900/60 border-amber-500/50 shadow-sm shadow-amber-500/10"
+                title="Launch Hermes Apollo Voice OS (:8765) with Authentic Charlie Kirk"
+              >
+                <span>🎙️</span>
+                <span>Apollo Voice (:8765)</span>
+                <ExternalLink className="w-3 h-3 opacity-80" />
+              </a>
+
+              {/* Fincept Institutional Terminal */}
+              <a
+                href="/fincept.html"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer bg-amber-950/60 text-amber-300 hover:text-white hover:bg-amber-900/80 border-amber-500/60 shadow-sm shadow-amber-500/20"
+                title="Launch Fincept Institutional Trading Cyberdeck & L2 Order Book"
+              >
+                <span>📈</span>
+                <span>FINCEPT</span>
+                <ExternalLink className="w-3 h-3 opacity-80" />
+              </a>
 
               <button
                 onClick={() => setCenterTab('PORTAL_LANDING')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
                   centerTab === 'PORTAL_LANDING'
                     ? 'bg-blue-500/25 text-blue-200 border-blue-500/60 shadow-sm shadow-blue-500/20'
                     : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border-slate-800'
@@ -752,7 +923,7 @@ export default function App() {
 
               <button
                 onClick={() => setCenterTab('HEALTHCARE_NET')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
                   centerTab === 'HEALTHCARE_NET'
                     ? 'bg-rose-500/25 text-rose-200 border-rose-500/60 shadow-sm shadow-rose-500/20'
                     : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border-slate-800'
@@ -764,7 +935,7 @@ export default function App() {
 
               <button
                 onClick={() => setCenterTab('TRADING_COMMAND')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
                   centerTab === 'TRADING_COMMAND'
                     ? 'bg-emerald-500/25 text-emerald-200 border-emerald-500/60 shadow-sm shadow-emerald-500/20'
                     : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border-slate-800'
@@ -776,7 +947,7 @@ export default function App() {
 
               <button
                 onClick={() => setCenterTab('SOVEREIGN_ORIGIN_NODE')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 cursor-pointer ${
                   centerTab === 'SOVEREIGN_ORIGIN_NODE'
                     ? 'bg-indigo-500/25 text-indigo-200 border-indigo-500/60 shadow-sm shadow-indigo-500/20'
                     : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border-slate-800'
@@ -787,14 +958,44 @@ export default function App() {
               </button>
             </div>
 
-            {/* Right: Operator Mode */}
-            <div className="flex items-center gap-2 self-end md:self-auto shrink-0 font-mono">
+            {/* Right: Operator Mode & Display Fit Controls */}
+            <div className="flex items-center gap-2 shrink-0 font-mono">
+              {/* Display Fit & Screen Reframe Controls */}
+              <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-700/60 rounded-lg p-0.5 text-[11px]">
+                <span className="text-slate-400 px-1 font-bold uppercase tracking-wider text-[10px]">Fit:</span>
+                {[0.70, 0.75, 0.80, 0.85, 1.0].map((z) => (
+                  <button
+                    key={z}
+                    onClick={() => handleSetZoom(z)}
+                    className={`px-1.5 py-0.5 rounded font-bold transition-all ${
+                      uiZoom === z
+                        ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-400/50'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {Math.round(z * 100)}%
+                  </button>
+                ))}
+                <button
+                  onClick={() => setIsExpandedCanvas(!isExpandedCanvas)}
+                  className={`px-1.5 py-0.5 rounded font-bold transition-all flex items-center gap-1 border ${
+                    isExpandedCanvas
+                      ? 'bg-amber-500/25 text-amber-200 border-amber-500/60'
+                      : 'border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                  title="Toggle Full Canvas Focus"
+                >
+                  <Maximize2 className="w-3 h-3" />
+                  <span className="hidden sm:inline">{isExpandedCanvas ? '3-Col' : 'Focus'}</span>
+                </button>
+              </div>
+
               <button
                 onClick={() => setCenterTab('SOVEREIGN_ORIGIN_NODE')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer bg-slate-900 text-slate-300 hover:text-white border-slate-800"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer bg-slate-900 text-slate-300 hover:text-white border-slate-800"
               >
                 <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Return to Origin</span>
+                <span className="hidden sm:inline">Return to Origin</span>
               </button>
             </div>
           </div>
@@ -835,6 +1036,11 @@ export default function App() {
                   setAlertBanner({ message: `Custom App "${deployedAppName}" deployed to portal!`, type: 'SUCCESS' });
                 }}
               />
+            )}
+
+            {/* TAB CONTENT: Google DeepMind Desktop Suite (Absolute Permeable Multi-Agent Deliberation) */}
+            {centerTab === 'DESKTOP_DEEPMIND' && (
+              <DesktopDeepmindSuite />
             )}
 
             {/* TAB CONTENT: Sovereign Healthcare Network (HIPAA-TSL Decoupled Web & API) */}
@@ -897,10 +1103,10 @@ export default function App() {
         )
       ) : (
         <main className="flex-1 p-3 sm:p-5 max-w-[1720px] w-full mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* LEFT COLUMN: Controls, Bridges, Compliance (3 cols on 12-col grid) */}
+          <div className="grid grid-cols-12 gap-4 items-start">
+          {/* LEFT COLUMN: Controls, Bridges, Compliance */}
           {!isExpandedCanvas && (
-            <div className="lg:col-span-3">
+            <div className="col-span-12 lg:col-span-4 2xl:col-span-3">
               <AgentSidebar
                 isAutopilot={isAutopilot}
                 onToggleAutopilot={() => setIsAutopilot(!isAutopilot)}
@@ -925,7 +1131,7 @@ export default function App() {
           )}
 
           {/* CENTER COLUMN: Full 12 cols when canvas expanded, or 6 cols in triage mode */}
-          <div className={`${isExpandedCanvas ? 'lg:col-span-12' : 'lg:col-span-6'} space-y-5`}>
+          <div className={`${isExpandedCanvas ? 'col-span-12' : 'col-span-12 lg:col-span-8 2xl:col-span-6'} space-y-5`}>
             {/* Unified Net Worth Visualizer */}
             <PortfolioOverview
               balances={balances}
@@ -1097,6 +1303,7 @@ export default function App() {
                   signals={signals}
                   onExecuteSignal={executeSignal}
                   onBatchExecuteTop={handleBatchExecuteTop}
+                  onHarvestAll={handleHarvestAll}
                   onFormulateTopSignals={handleFormulateTopSignals}
                   isExecuting={isExecutingTrade}
                   isFormulating={isFormulatingTopSignals}
@@ -1131,15 +1338,6 @@ export default function App() {
               />
             )}
 
-            {/* TAB CONTENT: Space Bunny Alpha Stealth Model Suite */}
-            {centerTab === 'SPACE_BUNNY_ALPHA' && (
-              <SpaceBunnyAlphaSuite
-                onNotify={(msg, type) => setAlertBanner({ message: msg, type })}
-                onExecuteStealthRoute={(pair, yieldUsd) => {
-                  setAlertBanner({ message: `Space Bunny Alpha executed stealth private arbitrage on ${pair} (+$${yieldUsd.toFixed(2)} USD).`, type: 'SUCCESS' });
-                }}
-              />
-            )}
 
             {/* TAB CONTENT: All Signals Queue */}
             {centerTab === 'ALL_FEEDS' && (
@@ -1342,7 +1540,7 @@ export default function App() {
 
           {/* RIGHT COLUMN: Heretic LLM Console & Execution Feed (3 cols) */}
           {!isExpandedCanvas && (
-            <div className="lg:col-span-3 sticky top-16">
+            <div className="col-span-12 lg:col-span-12 2xl:col-span-3 sticky top-16">
               <HereticConsole
                 logs={thoughtLogs}
                 onClearLogs={() => setThoughtLogs([])}
@@ -1408,6 +1606,39 @@ export default function App() {
         onClose={() => setIsGrokModalOpen(false)}
         onNotify={(msg, type) => setAlertBanner({ message: msg, type: type === 'ERROR' ? 'ALERT' : type })}
       />
+      {/* Floating Global Screen Framing & Zoom Dock for Handheld / Multi-Display */}
+      <aside aria-label="Display Viewport Scaling Controls" className="fixed bottom-4 right-4 z-50 flex items-center gap-1.5 bg-slate-950/90 backdrop-blur-md border border-cyan-500/40 rounded-xl px-2.5 py-1.5 shadow-2xl shadow-cyan-950/50 text-xs font-mono">
+        <span className="text-cyan-400 font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
+          <Sliders className="w-3 h-3 text-cyan-400" />
+          <span>Scale:</span>
+        </span>
+        {[0.75, 0.85, 0.90, 1.0].map((z) => (
+          <button
+            key={z}
+            onClick={() => handleSetZoom(z)}
+            className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer ${
+              Math.abs(uiZoom - z) < 0.01
+                ? 'bg-cyan-500 text-slate-950 shadow-sm shadow-cyan-500/50 font-black'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+            title={`Set display zoom to ${Math.round(z * 100)}%`}
+          >
+            {Math.round(z * 100)}%
+          </button>
+        ))}
+        <button
+          onClick={() => setIsExpandedCanvas(!isExpandedCanvas)}
+          className={`ml-1 px-2 py-0.5 rounded text-[11px] font-bold transition-all flex items-center gap-1 border cursor-pointer ${
+            isExpandedCanvas
+              ? 'bg-amber-500/25 text-amber-200 border-amber-500/60'
+              : 'border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+          title="Toggle Full Canvas Focus"
+        >
+          <Maximize2 className="w-3 h-3" />
+          <span>{isExpandedCanvas ? '3-Col' : 'Focus'}</span>
+        </button>
+      </aside>
     </div>
   );
 }

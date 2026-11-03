@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aegentix Sovereign Avatar HUD — CyberSurf &amp; Naval Carrier Command</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      background-color: #060d1d;
+      background-image: radial-gradient(circle at 50% 0%, #0f2442 0%, #050a14 75%);
+      color: #e6f4ff;
+      overflow-x: hidden;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+    }
+    .hidden {
+      display: none !important;
+    }
+    /* Self-contained layout & utility system so rendering never depends on external CDNs */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(8, 18, 36, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(34, 211, 238, 0.35);
+      padding: 12px 16px;
+    }
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(34, 211, 238, 0.7);
+      box-shadow: 0 0 16px rgba(6, 182, 212, 0.3);
+      flex-shrink: 0;
+      background: #091526;
+    }
+    .brand-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .badge-pill-cyan {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: rgba(6, 182, 212, 0.22);
+      color: #67e8f9;
+      border: 1px solid rgba(34, 211, 238, 0.45);
+    }
+    .badge-pill-gold {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: rgba(234, 179, 8, 0.18);
+      color: #fde047;
+      border: 1px solid rgba(250, 204, 21, 0.45);
+    }
+    .nav-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-tab-btn {
+      cursor: pointer;
+      padding: 8px 13px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(71, 85, 105, 0.65);
+      transition: all 0.15s ease;
+    }
+    .nav-tab-btn:hover {
+      border-color: rgba(34, 211, 238, 0.65);
+      color: #ffffff;
+    }
+    .tab-active {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.35), rgba(234, 179, 8, 0.24));
+      border-color: #22d3ee;
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(34, 211, 238, 0.3);
+    }
+    .telemetry-pills {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .telemetry-box {
+      padding: 5px 10px;
+      border-radius: 7px;
+      background: rgba(9, 16, 30, 0.92);
+      border: 1px solid rgba(34, 211, 238, 0.35);
+    }
+    .workspace {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .hud-glass {
+      background: rgba(10, 20, 38, 0.88);
+      border: 1px solid rgba(34, 211, 238, 0.28);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), 0 0 22px rgba(6, 182, 212, 0.1);
+    }
+    .hud-glass-gold {
+      background: rgba(16, 20, 34, 0.92);
+      border: 1px solid rgba(250, 204, 21, 0.42);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), 0 0 22px rgba(234, 179, 8, 0.14);
+    }
+    .hud-grid-main {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 960px) {
+      .hud-grid-main {
+        grid-template-columns: 5fr 7fr;
+      }
+    }
+    .section-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-bottom: 1px solid rgba(34, 211, 238, 0.22);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .avatar-viewport {
+      position: relative;
+      width: 100%;
+      height: 230px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #040914;
+      border: 1px solid rgba(34, 211, 238, 0.4);
+      margin-bottom: 12px;
+    }
+    .ocean-viewport {
+      position: relative;
+      width: 100%;
+      height: 360px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #040914;
+      border: 1px solid rgba(34, 211, 238, 0.45);
+      margin-bottom: 12px;
+    }
+    .avatar-viewport canvas,
+    .ocean-viewport canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .caption-box {
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(5, 11, 22, 0.92);
+      border: 1px solid rgba(34, 211, 238, 0.32);
+      margin-bottom: 12px;
+    }
+    .stage-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .stage-step-btn {
+      cursor: pointer;
+      padding: 7px 4px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #0b1528;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+    }
+    .stage-step-btn.active {
+      background: rgba(6, 182, 212, 0.35);
+      border-color: #22d3ee;
+      color: #ffffff;
+    }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary {
+      cursor: pointer;
+      flex: 1;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: linear-gradient(90deg, #06b6d4, #2563eb);
+      color: #ffffff;
+      border: 1px solid #67e8f9;
+    }
+    .btn-gold {
+      cursor: pointer;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(234, 179, 8, 0.22);
+      border: 1px solid rgba(250, 204, 21, 0.65);
+      color: #fef08a;
+    }
+    .btn-emerald {
+      cursor: pointer;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.22);
+      border: 1px solid rgba(52, 211, 153, 0.65);
+      color: #6ee7b7;
+    }
+    .btn-cyan {
+      cursor: pointer;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(6, 182, 212, 0.22);
+      border: 1px solid rgba(34, 211, 238, 0.65);
+      color: #a5f3fc;
+    }
+    .select-input, .text-input {
+      background: #070e1c;
+      border: 1px solid rgba(34, 211, 238, 0.45);
+      color: #e2f1ff;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .overlay-top {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .overlay-card {
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(5, 10, 20, 0.88);
+      border: 1px solid rgba(34, 211, 238, 0.45);
+      font-size: 11px;
+    }
+    .overlay-badge-corner {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(5, 10, 20, 0.92);
+      border: 1px solid rgba(250, 204, 21, 0.6);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    }
+    .overlay-badge-corner img {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid #22d3ee;
+    }
+    .slider-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .slider-box {
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(9, 16, 30, 0.85);
+      border: 1px solid rgba(51, 65, 85, 0.7);
+    }
+    .vault-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
+    }
+    .vault-card {
+      background: rgba(11, 22, 42, 0.9);
+      border: 1px solid rgba(34, 211, 238, 0.35);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .vault-card img {
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      background: #050a14;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .hero-card img {
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid rgba(34, 211, 238, 0.35);
+      background: #050a14;
+    }
+    .forge-canvas-wrap {
+      width: 310px;
+      height: 310px;
+      margin: 12px auto;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px solid rgba(250, 204, 21, 0.65);
+      background: #050a14;
+      box-shadow: 0 0 30px rgba(34, 211, 238, 0.2);
+    }
+    .forge-canvas-wrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    table.roster-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    table.roster-table th,
+    table.roster-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      text-align: left;
+    }
+    table.roster-table th {
+      color: #94a3b8;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+    .ledger-stream {
+      padding: 10px;
+      border-radius: 10px;
+      background: #040914;
+      border: 1px solid #1e293b;
+      max-height: 190px;
+      overflow-y: auto;
+      font-size: 11px;
+    }
+    .toast-banner {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 50;
+      padding: 10px 16px;
+      border-radius: 10px;
+      background: rgba(14, 22, 38, 0.96);
+      border: 1px solid #facc15;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP SOVEREIGN COMMAND HEADER -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-row">
+        <div class="brand-logo">
+          <img id="brandCoreImg" alt="CyberSurf Core" />
+        </div>
+        <div>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px;">
+            <span class="badge-pill-cyan mono">CVN-AEGENTIX-01</span>
+            <span class="badge-pill-gold mono">GATE_SYM_02: ZERO-LOSS ACTIVE</span>
+          </div>
+          <h1 style="margin:0; font-size:16px; font-weight:800; color:#ffffff;">
+            Sovereign Immersive Avatar HUD &amp; Infinite Graphics Forge
+          </h1>
+        </div>
+      </div>
+
+      <!-- NAVIGATION TABS -->
+      <nav class="nav-bar" role="tablist">
+        <button id="tabBtnHud" data-tab="hud" class="nav-tab-btn tab-active">
+          1. Immersive Avatar HUD
+        </button>
+        <button id="tabBtnForge" data-tab="forge" class="nav-tab-btn">
+          2. Infinite Badge Graphics Forge (Tier 0–∞)
+        </button>
+        <button id="tabBtnVault" data-tab="vault" class="nav-tab-btn">
+          3. Generated Badge &amp; Naval Gallery
+        </button>
+        <button id="tabBtnCarrier" data-tab="carrier" class="nav-tab-btn">
+          4. Flight Deck &amp; Deployable Treasuries
+        </button>
+      </nav>
+
+      <!-- LIVE TELEMETRY PILLS -->
+      <div class="telemetry-pills mono">
+        <div class="telemetry-box">
+          <span style="color:#94a3b8;">MOTHER RESERVE (:8081):</span>
+          <span id="headerReserveUsd" style="color:#34d399; font-weight:700; margin-left:4px;">$100,000.00</span>
+        </div>
+        <div class="telemetry-box">
+          <span style="color:#94a3b8;">FLEET WAVE PnL:</span>
+          <span id="headerFleetPnl" style="color:#fde047; font-weight:700; margin-left:4px;">+$1.1695</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT WORKSPACE -->
+  <main class="workspace">
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 1: IMMERSIVE AVATAR HUD & LIVE 3D WAVE SIMULATION                -->
+    <!-- ===================================================================== -->
+    <section id="view-hud">
+      <div class="hud-grid-main">
+
+        <!-- LEFT COLUMN: HOLOGRAPHIC AVATAR COMMANDER & JOURNEY STAGE GUIDE -->
+        <div class="hud-glass" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div class="section-header">
+              <div>
+                <div class="mono" style="font-size:11px; color:#22d3ee; font-weight:700;">AEGENTIX-XVL AVATAR CORTEX</div>
+                <h2 style="margin:2px 0 0 0; font-size:15px; font-weight:700; color:#ffffff;">Sovereign Commander HUD</h2>
+              </div>
+              <button id="btnToggleAudio" class="btn-cyan">
+                🔊 Synth Pulse: ON
+              </button>
+            </div>
+
+            <!-- PROCEDURAL HOLOGRAPHIC AVATAR CORE CANVAS -->
+            <div class="avatar-viewport">
+              <canvas id="avatarCoreCanvas" width="420" height="230"></canvas>
+              <div class="mono" style="position:absolute; bottom:8px; left:8px; right:8px; display:flex; justify-content:space-between; padding:4px 8px; border-radius:6px; background:rgba(4,9,20,0.88); border:1px solid rgba(34,211,238,0.35); font-size:11px;">
+                <span id="avatarStateLabel" style="color:#67e8f9; font-weight:700;">STATE: WAVE_TELEMETRY_LOCK</span>
+                <span id="avatarNotarySeq" style="color:#fde047;">:9001 SEQ #104</span>
+              </div>
+            </div>
+
+            <!-- SYNCHRONIZED AVATAR CAPTION STREAM -->
+            <div class="caption-box">
+              <div class="mono" style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;">
+                <span id="journeyStageBadge" style="color:#67e8f9; font-weight:700;">STAGE 1 / 5 · FLIGHT DECK CATAPULT</span>
+                <span id="journeyCheckpointTag" style="color:#34d399;">CHECKPOINT SAVED</span>
+              </div>
+              <p id="avatarCaptionText" style="margin:0; font-size:13px; line-height:1.5; color:#f1f5f9;">
+                "Commander on deck. CVN-AEGENTIX-01 is holding position in open liquidity waters. Every Agentic Super Wallet on the catapult carries its own Surfing Badge seal and isolated Deployable Treasury Cell—no static ceiling, real-time procedural graphics scale infinitely as consecutive positive-PnL wave legs compound."
+              </p>
+            </div>
+          </div>
+
+          <!-- JOURNEY WALKTHROUGH & BRANCH CONTROLS -->
+          <div>
+            <div class="stage-grid" id="stageSelectorGrid">
+              <button data-stage="0" class="stage-step-btn active mono">S1</button>
+              <button data-stage="1" class="stage-step-btn mono">S2</button>
+              <button data-stage="2" class="stage-step-btn mono">S3</button>
+              <button data-stage="3" class="stage-step-btn mono">S4</button>
+              <button data-stage="4" class="stage-step-btn mono">S5</button>
+            </div>
+            <div class="btn-row">
+              <button id="btnPlayWalkthrough" class="btn-primary">
+                ▶ Auto-Play Walkthrough
+              </button>
+              <button id="btnBranchSortie" class="btn-gold">
+                ⚡ Fire Live Wave Sortie
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: REAL-TIME 60FPS OCEAN WAVE, CANDLESTICK & SUPER-WALLET VIEWPORT -->
+        <div class="hud-glass" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div class="section-header">
+            <div>
+              <div class="mono" style="font-size:11px; color:#fde047; font-weight:700;">REAL-TIME PROCEDURAL GRAPHICS ENGINE // NO TIER LIMIT</div>
+              <h2 style="margin:2px 0 0 0; font-size:15px; font-weight:700; color:#ffffff;">Open-Water Market Wave &amp; Agentic Super Wallet Telemetry</h2>
+            </div>
+            <div class="btn-row">
+              <select id="hudActiveAgentSelect" class="select-input mono">
+                <option value="AEG-NODE-644943">AEG-NODE-644943 (WAVE_STRIKE · Tier 3)</option>
+                <option value="AEG-NODE-865854">AEG-NODE-865854 (RECON_SCOUT · Tier 2)</option>
+                <option value="AEG-NODE-534000">AEG-NODE-534000 (INFIL_SURFER · Tier 4)</option>
+                <option value="AEG-NODE-338476">AEG-NODE-338476 (GHOST_APEX · Tier 5)</option>
+              </select>
+              <button id="btnInjectWaveImpulse" class="btn-emerald mono">
+                + Ride Next Positive Leg
+              </button>
+              <button id="btnCompleteRoundTrip" class="btn-cyan mono">
+                ⚓ Dock &amp; Mint Badge
+              </button>
+            </div>
+          </div>
+
+          <!-- MAIN INTERACTIVE OCEAN WAVE & CANDLESTICK GRAPHICS CANVAS -->
+          <div class="ocean-viewport">
+            <canvas id="oceanWaveHudCanvas" width="760" height="360"></canvas>
+
+            <!-- FLOATING OVERLAY TELEMETRY CARDS -->
+            <div class="overlay-top mono">
+              <div class="overlay-card">
+                <div style="font-size:10px; color:#94a3b8;">ACTIVE SUPER WALLET</div>
+                <div id="overlayWalletId" style="color:#67e8f9; font-weight:700;">0xAEG9f4c...81b2 (AEG-NODE-644943)</div>
+              </div>
+              <div class="overlay-card">
+                <div style="font-size:10px; color:#94a3b8;">DEPLOYABLE TREASURY CELL</div>
+                <div id="overlayCellNav" style="color:#fde047; font-weight:700;">DTC-T3 · NAV: $1,000.1280</div>
+              </div>
+              <div class="overlay-card">
+                <div style="font-size:10px; color:#94a3b8;">CONSECUTIVE +PnL WAVE STREAK</div>
+                <div id="overlayWaveStreak" style="color:#34d399; font-weight:700;">5 LEGS (+$0.1280 · ZERO-LOSS INTACT)</div>
+              </div>
+            </div>
+
+            <!-- CURRENT BADGE HOLOGRAM PREVIEW IN CORNER -->
+            <div class="overlay-badge-corner mono">
+              <img id="overlayBadgeImg" alt="Active Surfing Badge" />
+              <div>
+                <div style="font-size:10px; color:#fde047; font-weight:700;">CREDENTIALED BADGE</div>
+                <div id="overlayBadgeName" style="font-size:12px; color:#ffffff; font-weight:700;">Tier 3: Barrel Surfer</div>
+                <div id="overlayBadgeClearance" style="font-size:11px; color:#67e8f9;">BARREL_SURFER_VANGUARD</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- WAVE AMPLITUDE & PROCEDURAL SHADER CONTROLS -->
+          <div class="slider-grid mono">
+            <div class="slider-box">
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                <span style="color:#94a3b8;">WAVE SWELL AMPLITUDE</span>
+                <span id="lblWaveAmp" style="color:#67e8f9; font-weight:700;">1.4x</span>
+              </div>
+              <input id="rngWaveAmp" type="range" min="0.5" max="3.0" step="0.1" value="1.4" style="width:100%;" />
+            </div>
+            <div class="slider-box">
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                <span style="color:#94a3b8;">MARKET HARMONIC VELOCITY</span>
+                <span id="lblWaveSpeed" style="color:#fde047; font-weight:700;">1.8x</span>
+              </div>
+              <input id="rngWaveSpeed" type="range" min="0.5" max="4.0" step="0.1" value="1.8" style="width:100%;" />
+            </div>
+            <div class="slider-box">
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                <span style="color:#94a3b8;">PROCEDURAL CANDLE DENSITY</span>
+                <span id="lblCandleDensity" style="color:#34d399; font-weight:700;">16 BARS</span>
+              </div>
+              <input id="rngCandleDensity" type="range" min="6" max="36" step="2" value="16" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 2: INFINITE PROCEDURAL BADGE GRAPHICS FORGE (TIER 0 TO ∞)        -->
+    <!-- ===================================================================== -->
+    <section id="view-forge" class="hidden">
+      <div class="hud-grid-main">
+
+        <!-- FORGE CONTROLS -->
+        <div class="hud-glass-gold">
+          <div class="section-header">
+            <div>
+              <div class="mono" style="font-size:11px; color:#fde047; font-weight:700;">UNLIMITED REAL-TIME GRAPHICS ENGINE</div>
+              <h2 style="margin:2px 0 0 0; font-size:16px; font-weight:800; color:#ffffff;">Procedural Surfing Badge &amp; Treasury Forge</h2>
+            </div>
+          </div>
+          <p style="font-size:12px; color:#cbd5e1; margin-top:0; margin-bottom:14px;">
+            Tiers 0–5 are just the starting baseline. Synthesize real high-resolution vector/shader badge emblems for any tier (Tier 6 to Tier 999+), streak count, and deployable treasury tranche.
+          </p>
+
+          <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
+            <div>
+              <label for="forgeTierInput" class="mono" style="display:block; margin-bottom:4px; color:#cbd5e1; font-weight:600;">BADGE TIER LEVEL (NO LIMIT: 0 TO 999+)</label>
+              <div class="btn-row">
+                <input id="forgeTierInput" type="number" min="0" max="9999" value="6" class="text-input mono" style="width:90px; font-weight:700; color:#fde047;" />
+                <button id="btnPresetTier6" class="btn-cyan mono">Tier 6</button>
+                <button id="btnPresetTier12" class="btn-cyan mono">Tier 12</button>
+                <button id="btnPresetTier33" class="btn-gold mono">Tier 33 Ω</button>
+                <button id="btnPresetTier100" class="btn-emerald mono">Tier 100</button>
+              </div>
+            </div>
+
+            <div>
+              <label for="forgeBadgeTitle" class="mono" style="display:block; margin-bottom:4px; color:#cbd5e1; font-weight:600;">CUSTOM BADGE DESIGNATION</label>
+              <input id="forgeBadgeTitle" type="text" value="Abyssal Leviathan Surfer" class="text-input" style="width:100%; font-weight:600;" />
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div>
+                <label for="forgeStreakLegs" class="mono" style="display:block; margin-bottom:4px; color:#cbd5e1; font-weight:600;">CONSECUTIVE +PnL LEGS</label>
+                <input id="forgeStreakLegs" type="number" min="2" max="500" value="18" class="text-input mono" style="width:100%; color:#34d399; font-weight:700;" />
+              </div>
+              <div>
+                <label for="forgeTrancheUsd" class="mono" style="display:block; margin-bottom:4px; color:#cbd5e1; font-weight:600;">DEPLOYABLE TREASURY ($)</label>
+                <input id="forgeTrancheUsd" type="number" min="25" max="100000000" step="100" value="100000" class="text-input mono" style="width:100%; color:#fde047; font-weight:700;" />
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div>
+                <label for="forgeWaveStyle" class="mono" style="display:block; margin-bottom:4px; color:#cbd5e1; font-weight:600;">WAVE CREST GEOMETRY</label>
+                <select id="forgeWaveStyle" class="select-input mono" style="width:100%;">
+                  <option value="spiral_barrel">Deep Curling Barrel Vortex</option>
+                  <option value="double_pipeline">Double Pipeline Crest</option>
+                  <option value="tsunami_crown" selected>Sovereign Tsunami Crown</option>
+                  <option value="quantum_singularity">Omega Harmonic Singularity</option>
+                </select>
+              </div>
+              <div>
+                <label for="forgePalette" class="mono" style="display:block; margin-bottom:4px; color:#cbd5e1; font-weight:600;">SHADER PALETTE</label>
+                <select id="forgePalette" class="select-input mono" style="width:100%;">
+                  <option value="cyan_gold" selected>Cybernetic Cyan &amp; Imperial Gold</option>
+                  <option value="ultraviolet_plasma">Ultraviolet Plasma &amp; Platinum</option>
+                  <option value="crimson_sovereign">Crimson Sovereign &amp; Diamond</option>
+                  <option value="emerald_quant">Emerald Quant &amp; Obsidian</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="btn-row" style="margin-top:6px;">
+              <button id="btnMintCustomTier" class="btn-primary">
+                ⚡ Mint Tier to Fleet Registry
+              </button>
+              <button id="btnDownloadBadgePng" class="btn-gold mono">
+                ⬇ Export Real PNG
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIVE PROCEDURAL HIGH-RES GRAPHIC RENDERER -->
+        <div class="hud-glass" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div class="section-header">
+            <div>
+              <div class="mono" style="font-size:11px; color:#67e8f9; font-weight:700;">LIVE GPU/CANVAS2D SHADER OUTPUT (720x720)</div>
+              <h3 id="forgePreviewHeader" style="margin:2px 0 0 0; font-size:15px; font-weight:700; color:#ffffff;">Tier 6 — Abyssal Leviathan Surfer</h3>
+            </div>
+            <span id="forgeSealBadge" class="badge-pill-cyan mono">SHA-256 SEALED</span>
+          </div>
+
+          <div class="forge-canvas-wrap">
+            <canvas id="proceduralBadgeCanvas" width="720" height="720"></canvas>
+          </div>
+
+          <!-- DYNAMICALLY MINTED CUSTOM TIERS LIST -->
+          <div>
+            <div class="mono" style="font-size:11px; font-weight:700; color:#94a3b8; margin-bottom:6px;">MINTED EXPANSION TIERS IN SESSION REGISTRY</div>
+            <div id="customMintedTiersList" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px; max-height:140px; overflow-y:auto;"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 3: GENERATED BADGE & NAVAL GRAPHICS VAULT (TIERS 0–5 + FLEET)    -->
+    <!-- ===================================================================== -->
+    <section id="view-vault" class="hidden">
+      <div class="hud-glass">
+        <div class="section-header">
+          <div>
+            <div class="mono" style="font-size:11px; color:#22d3ee; font-weight:700;">COMPLETE GENERATED GRAPHICS ASSET VAULT</div>
+            <h2 style="margin:2px 0 0 0; font-size:16px; font-weight:800; color:#ffffff;">CyberSurf Progression Badges (Tiers 0–5) &amp; Expeditionary Naval Fleet</h2>
+          </div>
+          <span class="mono" style="font-size:11px; color:#cbd5e1;">Click any badge to equip it inside the Immersive Avatar HUD</span>
+        </div>
+
+        <!-- 6 BADGE TIERS GRID -->
+        <div class="vault-grid">
+
+          <!-- TIER 0 -->
+          <div class="vault-card">
+            <div>
+              <div class="mono" style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;">
+                <span class="badge-pill-cyan">TIER 0 · SHADOW RECON</span>
+                <span style="color:#94a3b8;">$25 Tranche · 2 Legs</span>
+              </div>
+              <img id="vaultImgTier0" alt="Tier 0 Cadet Shadow Recon Badge" />
+              <h3 style="margin:8px 0 4px 0; font-size:14px; font-weight:700; color:#ffffff;">Cadet Shadow Recon Badge</h3>
+              <p style="margin:0; font-size:12px; color:#cbd5e1;">Entry CyberGym graduate credential (CADET_SHADOW_RECON) with 25% escrow floor protection.</p>
+            </div>
+            <button data-equip-tier="0" class="equip-badge-btn btn-cyan mono" style="width:100%;">
+              Load Tier 0 in Avatar HUD
+            </button>
+          </div>
+
+          <!-- TIER 1 -->
+          <div class="vault-card">
+            <div>
+              <div class="mono" style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;">
+                <span class="badge-pill-cyan">TIER 1 · LEVEL_1_CORE</span>
+                <span style="color:#34d399;">$100 Tranche · 3 Legs</span>
+              </div>
+              <img id="vaultImgTier1" alt="Tier 1 Swell Rider Badge" />
+              <h3 style="margin:8px 0 4px 0; font-size:14px; font-weight:700; color:#ffffff;">Swell Rider Badge</h3>
+              <p style="margin:0; font-size:12px; color:#cbd5e1;">2+ consecutive positive-PnL wave positions (+$0.0035 min PnL · SWELL_RIDER_TACTICAL).</p>
+            </div>
+            <button data-equip-tier="1" class="equip-badge-btn btn-cyan mono" style="width:100%;">
+              Load Tier 1 in Avatar HUD
+            </button>
+          </div>
+
+          <!-- TIER 2 -->
+          <div class="vault-card">
+            <div>
+              <div class="mono" style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;">
+                <span class="badge-pill-cyan">TIER 2 · VALIDATED_MESH</span>
+                <span style="color:#34d399;">$250 Tranche · 5 Legs</span>
+              </div>
+              <img id="vaultImgTier2" alt="Tier 2 Crest Runner Badge" />
+              <h3 style="margin:8px 0 4px 0; font-size:14px; font-weight:700; color:#ffffff;">Crest Runner Badge</h3>
+              <p style="margin:0; font-size:12px; color:#cbd5e1;">3+ consecutive positive-PnL wave positions (+$0.0105 min PnL · CREST_RUNNER_STRIKE).</p>
+            </div>
+            <button data-equip-tier="2" class="equip-badge-btn btn-cyan mono" style="width:100%;">
+              Load Tier 2 in Avatar HUD
+            </button>
+          </div>
+
+          <!-- TIER 3 -->
+          <div class="vault-card">
+            <div>
+              <div class="mono" style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;">
+                <span class="badge-pill-cyan">TIER 3 · AUTONOMOUS_SWARM</span>
+                <span style="color:#fde047;">$1,000 Tranche · 8 Legs</span>
+              </div>
+              <img id="vaultImgTier3" alt="Tier 3 Barrel Surfer Badge" />
+              <h3 style="margin:8px 0 4px 0; font-size:14px; font-weight:700; color:#ffffff;">Barrel Surfer Badge</h3>
+              <p style="margin:0; font-size:12px; color:#cbd5e1;">5+ consecutive positive-PnL wave positions (+$0.0385 min PnL · BARREL_SURFER_VANGUARD).</p>
+            </div>
+            <button data-equip-tier="3" class="equip-badge-btn btn-cyan mono" style="width:100%;">
+              Load Tier 3 in Avatar HUD
+            </button>
+          </div>
+
+          <!-- TIER 4 -->
+          <div class="vault-card">
+            <div>
+              <div class="mono" style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;">
+                <span class="badge-pill-gold">TIER 4 · SOVEREIGN_TREASURY</span>
+                <span style="color:#fde047;">$5,000 Tranche · 12 Legs</span>
+              </div>
+              <img id="vaultImgTier4" alt="Tier 4 Pipeline Apex Badge" />
+              <h3 style="margin:8px 0 4px 0; font-size:14px; font-weight:700; color:#ffffff;">Pipeline Apex Badge</h3>
+              <p style="margin:0; font-size:12px; color:#cbd5e1;">8+ consecutive positive-PnL wave positions (+$0.1400 min PnL · PIPELINE_APEX_COMMAND).</p>
+            </div>
+            <button data-equip-tier="4" class="equip-badge-btn btn-gold mono" style="width:100%;">
+              Load Tier 4 in Avatar HUD
+            </button>
+          </div>
+
+          <!-- TIER 5 -->
+          <div class="vault-card">
+            <div>
+              <div class="mono" style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;">
+                <span class="badge-pill-gold">TIER 5 · SUPERINTELLIGENCE</span>
+                <span style="color:#fde047;">$25,000 Tranche · 20 Legs</span>
+              </div>
+              <img id="vaultImgTier5" alt="Tier 5 Sovereign Tsunami Badge" />
+              <h3 style="margin:8px 0 4px 0; font-size:14px; font-weight:700; color:#ffffff;">Sovereign Tsunami Badge</h3>
+              <p style="margin:0; font-size:12px; color:#cbd5e1;">12+ consecutive positive-PnL wave positions (+$0.3850 min PnL · SOVEREIGN_TSUNAMI_FLEET).</p>
+            </div>
+            <button data-equip-tier="5" class="equip-badge-btn btn-gold mono" style="width:100%;">
+              Load Tier 5 in Avatar HUD
+            </button>
+          </div>
+
+        </div>
+
+        <!-- NAVAL CARRIER & AGENTIC SUPER WALLET HERO VISUALS -->
+        <div class="hero-grid">
+          <div class="vault-card hero-card">
+            <div class="mono" style="display:flex; justify-content:space-between; font-size:11px;">
+              <span style="color:#67e8f9; font-weight:700;">EXPEDITIONARY CARRIER STRIKE VESSEL · CVN-AEGENTIX-01</span>
+              <span style="color:#34d399;">MOTHER TREASURY (:8081)</span>
+            </div>
+            <img id="vaultImgCarrier" alt="Sovereign Carrier Vessel CVN-AEGENTIX-01" />
+            <p style="margin:0; font-size:12px; color:#cbd5e1;">
+              Mothership vessel that verifies agent Surfing Badges at the flight-deck catapult gate and spawns isolated Deployable Treasury Cells for open-water market sorties.
+            </p>
+          </div>
+          <div class="vault-card hero-card">
+            <div class="mono" style="display:flex; justify-content:space-between; font-size:11px;">
+              <span style="color:#fde047; font-weight:700;">EMBODIED AGENTIC SUPER WALLET &amp; DTC POD</span>
+              <span style="color:#67e8f9;">HMAC (:9001) SEALED</span>
+            </div>
+            <img id="vaultImgPod" alt="Agentic Super Wallet and Deployable Treasury Cell" />
+            <p style="margin:0; font-size:12px; color:#cbd5e1;">
+              Self-contained Agent-as-Wallet hydrofoil unit carrying its locked golden Deployable Treasury Cell and active Surfing Badge credential across multi-leg market waves.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 4: CARRIER FLIGHT DECK ROSTER & DEPLOYABLE TREASURY LEDGER       -->
+    <!-- ===================================================================== -->
+    <section id="view-carrier" class="hidden">
+      <div class="hud-glass">
+        <div class="section-header">
+          <div>
+            <div class="mono" style="font-size:11px; color:#22d3ee; font-weight:700;">8-NODE SOVEREIGN SWARM ROSTER // CVN-AEGENTIX-01</div>
+            <h2 style="margin:2px 0 0 0; font-size:16px; font-weight:800; color:#ffffff;">Active Agentic Super Wallets &amp; Deployable Treasury Cells</h2>
+          </div>
+          <button id="btnLaunchAllSwarm" class="btn-emerald mono">
+            🚀 Launch Full 8-Node Carrier Strike Sortie
+          </button>
+        </div>
+
+        <div style="overflow-x:auto; margin-bottom:14px;">
+          <table class="roster-table mono">
+            <thead>
+              <tr>
+                <th>Swarm Node ID</th>
+                <th>Naval Role &amp; Kernel</th>
+                <th>Super Wallet Address</th>
+                <th>Surfing Badge Tier</th>
+                <th style="text-align:right;">Deployable Treasury</th>
+                <th style="text-align:right;">Wave Streak</th>
+                <th style="text-align:right;">Round-Trip PnL</th>
+                <th style="text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="carrierRosterTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- IMMUTABLE SURF LEDGER LOG -->
+        <div>
+          <div class="mono" style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:6px;">
+            <span style="color:#fde047; font-weight:700;">IMMUTABLE SURF_LEDGER.JSONL &amp; NOTARY (:9001) ATTESTATION STREAM</span>
+            <button id="btnCopyLedgerJson" class="btn-cyan mono">
+              📋 Copy JSONL Log
+            </button>
+          </div>
+          <div id="surfLedgerStream" class="ledger-stream mono"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION BANNER -->
+  <div id="hudToast" class="toast-banner mono hidden"></div>
+
+  <script>
+    (function () {
+      // Procedural High-Res Data-URI Generator (Zero Base64 Bloat, Instant Load)
+      function synthesizeBadgeDataUri(tier, label, primary, secondary, bg) {
+        const c = document.createElement("canvas");
+        c.width = 240;
+        c.height = 240;
+        const ctx = c.getContext("2d");
+        const g = ctx.createRadialGradient(120, 120, 12, 120, 120, 120);
+        g.addColorStop(0, "#10203d");
+        g.addColorStop(1, bg);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 240, 240);
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI) / 3 - Math.PI / 2;
+          const x = 120 + Math.cos(a) * 96;
+          const y = 120 + Math.sin(a) * 96;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = "#060d1a";
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = secondary;
+        ctx.stroke();
+        const bars = 2 + tier * 2;
+        for (let i = 0; i < bars; i++) {
+          const bx = 68 + i * (104 / bars);
+          const bh = 18 + (i / bars) * 68;
+          const by = 162 - bh;
+          ctx.fillStyle = i % 2 === 0 ? primary : secondary;
+          ctx.fillRect(bx, by, Math.max(4, 90 / bars - 2), bh);
+        }
+        ctx.strokeStyle = primary;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(105, 120, 52, Math.PI * 0.4, Math.PI * 1.65, false);
+        ctx.stroke();
+        ctx.fillStyle = secondary;
+        ctx.font = "bold 14px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("TIER " + tier + " · " + label, 120, 56);
+        return c.toDataURL("image/png");
+      }
+
+      const CORE_IMG = synthesizeBadgeDataUri(3, "CYBERSURF", "#22d3ee", "#facc15", "#040914");
+      const CARRIER_IMG = synthesizeBadgeDataUri(5, "CVN-AEGENTIX-01", "#22d3ee", "#34d399", "#040914");
+      const POD_IMG = synthesizeBadgeDataUri(4, "SUPER-WALLET", "#facc15", "#22d3ee", "#040914");
+      const TIER_IMAGES = {
+        0: synthesizeBadgeDataUri(0, "RECON", "#c084fc", "#94a3b8", "#090514"),
+        1: synthesizeBadgeDataUri(1, "SWELL", "#22d3ee", "#d97706", "#050b18"),
+        2: synthesizeBadgeDataUri(2, "CREST", "#38bdf8", "#e2e8f0", "#050b18"),
+        3: synthesizeBadgeDataUri(3, "BARREL", "#34d399", "#facc15", "#04120e"),
+        4: synthesizeBadgeDataUri(4, "PIPELINE", "#fb7185", "#facc15", "#14060b"),
+        5: synthesizeBadgeDataUri(5, "TSUNAMI", "#facc15", "#c084fc", "#090514")
+      };
+
+      // Populate static gallery & header images from single dictionary
+      document.getElementById("brandCoreImg").src = CORE_IMG;
+      document.getElementById("vaultImgTier0").src = TIER_IMAGES[0];
+      document.getElementById("vaultImgTier1").src = TIER_IMAGES[1];
+      document.getElementById("vaultImgTier2").src = TIER_IMAGES[2];
+      document.getElementById("vaultImgTier3").src = TIER_IMAGES[3];
+      document.getElementById("vaultImgTier4").src = TIER_IMAGES[4];
+      document.getElementById("vaultImgTier5").src = TIER_IMAGES[5];
+      document.getElementById("vaultImgCarrier").src = CARRIER_IMG;
+      document.getElementById("vaultImgPod").src = POD_IMG;
+
+      const TIER_METADATA = {
+        0: { name: "Tier 0: Cadet Shadow Recon", clearance: "CADET_SHADOW_RECON", tranche: 25, minStreak: 1 },
+        1: { name: "Tier 1: Swell Rider", clearance: "SWELL_RIDER_TACTICAL", tranche: 100, minStreak: 2 },
+        2: { name: "Tier 2: Crest Runner", clearance: "CREST_RUNNER_STRIKE", tranche: 250, minStreak: 3 },
+        3: { name: "Tier 3: Barrel Surfer", clearance: "BARREL_SURFER_VANGUARD", tranche: 1000, minStreak: 5 },
+        4: { name: "Tier 4: Pipeline Apex", clearance: "PIPELINE_APEX_COMMAND", tranche: 5000, minStreak: 8 },
+        5: { name: "Tier 5: Sovereign Tsunami", clearance: "SOVEREIGN_TSUNAMI_FLEET", tranche: 25000, minStreak: 12 }
+      };
+
+      const JOURNEY_STAGES = [
+        {
+          badge: "STAGE 1 / 5 · FLIGHT DECK CATAPULT",
+          state: "STATE: FLIGHT_DECK_CLEARANCE",
+          caption: "\"Commander on deck. CVN-AEGENTIX-01 is holding position in open liquidity waters. Every Agentic Super Wallet on the catapult carries its own Surfing Badge seal and isolated Deployable Treasury Cell—no static ceiling, real-time procedural graphics scale infinitely as consecutive positive-PnL wave legs compound.\""
+        },
+        {
+          badge: "STAGE 2 / 5 · DEPLOYABLE TREASURY BINDING",
+          state: "STATE: DTC_ESCROW_LOCKED",
+          caption: "\"Mother Treasury (:8081) has carved out an HMAC-sealed Deployable Treasury Cell directly inside the Agentic Super Wallet. The agent goes out into the market as the wallet itself, with its escrow floor mathematically locked under GATE_SYM_02_STRICT_ZERO_LOSS.\""
+        },
+        {
+          badge: "STAGE 3 / 5 · OPEN-WATER WAVE RIDING",
+          state: "STATE: MULTI_LEG_WAVE_SURFING",
+          caption: "\"Holding core position across the swell. Each successive green candlestick crest locks in positive net PnL on the same round trip, advancing the agent's streak velocity from Swell Rider toward Barrel Surfer and Sovereign Tsunami.\""
+        },
+        {
+          badge: "STAGE 4 / 5 · INFINITE PROCEDURAL BADGE FORGE",
+          state: "STATE: PROCEDURAL_SHADER_MINT",
+          caption: "\"Tiers 0 through 5 are only the launch pad. Our procedural shader forge synthesizes real vector and hologram badge graphics for Tier 6, Tier 33 Ω, Tier 100, and beyond as your fleet scales into deeper liquidity.\""
+        },
+        {
+          badge: "STAGE 5 / 5 · CARRIER DOCKING & ASCENSION",
+          state: "STATE: NOTARY_9001_FINALITY",
+          caption: "\"Round trip complete. The Agentic Super Wallet docks back onto CVN-AEGENTIX-01, sweeps principal plus compounded wave PnL into the Mother Reserve, and receives its Notary (:9001) Surfing Badge promotion.\""
+        }
+      ];
+
+      const swarmRoster = [
+        { id: "AEG-NODE-644943", role: "OFFEND / WAVE_STRIKE", kernel: "AEGENTIX-XVL", wallet: "0xAEG9f4c...81b2", tier: 3, tranche: 1000.0, streak: 5, pnl: 0.1280 },
+        { id: "AEG-NODE-865854", role: "RECON / SWELL_SCOUT", kernel: "AEGENTIX-XV", wallet: "0xAEG3a19...44d0", tier: 2, tranche: 250.0, streak: 3, pnl: 0.0205 },
+        { id: "AEG-NODE-534000", role: "INFIL / BARREL_DIVER", kernel: "AEGENTIX-XVL", wallet: "0xAEG7c82...19f4", tier: 4, tranche: 5000.0, streak: 8, pnl: 0.2410 },
+        { id: "AEG-NODE-570081", role: "EXFIL / CREST_HARVEST", kernel: "AEGENTIX-SO", wallet: "0xAEG2b05...93a1", tier: 2, tranche: 250.0, streak: 4, pnl: 0.0340 },
+        { id: "AEG-NODE-328975", role: "DEFEND / ESCROW_GUARD", kernel: "AEGENTIX-SO", wallet: "0xAEG6e11...70c8", tier: 3, tranche: 1000.0, streak: 6, pnl: 0.0890 },
+        { id: "AEG-NODE-011260", role: "INTEL / SPREAD_ORACLE", kernel: "AEGENTIX-XV", wallet: "0xAEG4d90...22e7", tier: 1, tranche: 100.0, streak: 2, pnl: 0.0085 },
+        { id: "AEG-NODE-681081", role: "MEDIC / RECOVERY_SYNC", kernel: "AEGENTIX-X", wallet: "0xAEG8f33...61b9", tier: 1, tranche: 100.0, streak: 2, pnl: 0.0065 },
+        { id: "AEG-NODE-338476", role: "GHOST / TSUNAMI_APEX", kernel: "AEGENTIX-LSO", wallet: "0xAEG1a77...99f0", tier: 5, tranche: 25000.0, streak: 12, pnl: 0.6420 }
+      ];
+
+      let motherReserveUsd = 100000.00;
+      let fleetTotalPnlUsd = 1.1695;
+      let notarySeq = 104;
+      let activeStageIndex = 0;
+      let walkthroughTimer = null;
+      let synthAudioEnabled = true;
+      let audioCtx = null;
+
+      let waveAmp = 1.4;
+      let waveSpeed = 1.8;
+      let candleDensity = 16;
+      let activeAgentId = "AEG-NODE-644943";
+
+      const customMintedTiers = [
+        { tier: 6, title: "Abyssal Leviathan Surfer", streak: 18, tranche: 100000, style: "tsunami_crown", palette: "cyan_gold", hash: "8f91c2a7...e41b" },
+        { tier: 12, title: "Quantum Sovereign Navigator", streak: 36, tranche: 500000, style: "quantum_singularity", palette: "ultraviolet_plasma", hash: "3b74d09e...92a0" }
+      ];
+
+      const ledgerEntries = [
+        { ts: "16:31:12Z", seq: 103, agent: "AEG-NODE-338476", tier: 5, badge: "Sovereign Tsunami Badge", streak: 12, pnl: "+$0.6420", cell: "DTC-AEG-NODE-338476-T5", seal: "9c4e18b2f0a177d4" },
+        { ts: "16:33:40Z", seq: 104, agent: "AEG-NODE-644943", tier: 3, badge: "Barrel Surfer Badge", streak: 5, pnl: "+$0.1280", cell: "DTC-AEG-NODE-644943-T3", seal: "4a81d7e3b91204c8" }
+      ];
+
+      function playPulseTone(freq, durationMs) {
+        if (!synthAudioEnabled) return;
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+          if (!audioCtx) audioCtx = new AudioContextClass();
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq || 520, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (durationMs || 140) / 1000);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + (durationMs || 140) / 1000);
+        } catch (e) {}
+      }
+
+      function showToast(msg) {
+        const el = document.getElementById("hudToast");
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.remove("hidden");
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => el.classList.add("hidden"), 3200);
+      }
+
+      const tabButtons = document.querySelectorAll(".nav-tab-btn");
+      const views = {
+        hud: document.getElementById("view-hud"),
+        forge: document.getElementById("view-forge"),
+        vault: document.getElementById("view-vault"),
+        carrier: document.getElementById("view-carrier")
+      };
+
+      function switchTab(tabKey) {
+        tabButtons.forEach((btn) => {
+          if (btn.getAttribute("data-tab") === tabKey) {
+            btn.classList.add("tab-active");
+          } else {
+            btn.classList.remove("tab-active");
+          }
+        });
+        Object.keys(views).forEach((k) => {
+          if (views[k]) {
+            if (k === tabKey) views[k].classList.remove("hidden");
+            else views[k].classList.add("hidden");
+          }
+        });
+        if (tabKey === "forge") renderProceduralBadgeCanvas();
+        if (tabKey === "carrier") renderCarrierRoster();
+        resizeHudCanvases();
+      }
+
+      tabButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          playPulseTone(640, 90);
+          switchTab(btn.getAttribute("data-tab"));
+        });
+      });
+
+      function setJourneyStage(idx) {
+        activeStageIndex = idx % JOURNEY_STAGES.length;
+        const st = JOURNEY_STAGES[activeStageIndex];
+        document.getElementById("journeyStageBadge").textContent = st.badge;
+        document.getElementById("avatarStateLabel").textContent = st.state;
+        document.getElementById("avatarCaptionText").textContent = st.caption;
+
+        document.querySelectorAll(".stage-step-btn").forEach((b, i) => {
+          if (i === activeStageIndex) {
+            b.classList.add("active");
+          } else {
+            b.classList.remove("active");
+          }
+        });
+      }
+
+      document.querySelectorAll(".stage-step-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          playPulseTone(580, 100);
+          setJourneyStage(parseInt(btn.getAttribute("data-stage"), 10));
+        });
+      });
+
+      document.getElementById("btnPlayWalkthrough").addEventListener("click", function () {
+        if (walkthroughTimer) {
+          clearInterval(walkthroughTimer);
+          walkthroughTimer = null;
+          this.textContent = "▶ Auto-Play Walkthrough";
+          showToast("Walkthrough paused at current checkpoint.");
+        } else {
+          this.textContent = "⏸ Pause Walkthrough";
+          playPulseTone(720, 140);
+          walkthroughTimer = setInterval(() => {
+            setJourneyStage((activeStageIndex + 1) % JOURNEY_STAGES.length);
+          }, 3600);
+          showToast("Auto-playing Sovereign Avatar HUD walkthrough.");
+        }
+      });
+
+      document.getElementById("btnToggleAudio").addEventListener("click", function () {
+        synthAudioEnabled = !synthAudioEnabled;
+        this.textContent = synthAudioEnabled ? "🔊 Synth Pulse: ON" : "🔇 Synth Pulse: MUTED";
+      });
+
+      function getActiveAgent() {
+        return swarmRoster.find((a) => a.id === activeAgentId) || swarmRoster[0];
+      }
+
+      function syncHudAgentOverlay() {
+        const ag = getActiveAgent();
+        const meta = TIER_METADATA[Math.min(5, ag.tier)] || TIER_METADATA[5];
+        document.getElementById("overlayWalletId").textContent = `${ag.wallet} (${ag.id})`;
+        document.getElementById("overlayCellNav").textContent = `DTC-T${ag.tier} · NAV: $${(ag.tranche + ag.pnl).toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`;
+        document.getElementById("overlayWaveStreak").textContent = `${ag.streak} LEGS (+$${ag.pnl.toFixed(4)} · ZERO-LOSS INTACT)`;
+        document.getElementById("overlayBadgeImg").src = TIER_IMAGES[Math.min(5, ag.tier)];
+        document.getElementById("overlayBadgeName").textContent = ag.tier <= 5 ? meta.name : `Tier ${ag.tier}: Custom Apex Surfer`;
+        document.getElementById("overlayBadgeClearance").textContent = ag.tier <= 5 ? meta.clearance : `SOVEREIGN_TIER_${ag.tier}_APEX`;
+
+        document.getElementById("headerReserveUsd").textContent = `$${motherReserveUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        document.getElementById("headerFleetPnl").textContent = `+$${fleetTotalPnlUsd.toFixed(4)}`;
+        document.getElementById("avatarNotarySeq").textContent = `:9001 SEQ #${notarySeq}`;
+      }
+
+      document.getElementById("hudActiveAgentSelect").addEventListener("change", function () {
+        activeAgentId = this.value;
+        playPulseTone(540, 100);
+        syncHudAgentOverlay();
+      });
+
+      function rideNextWaveLeg() {
+        const ag = getActiveAgent();
+        const legGain = +(0.0085 + Math.random() * 0.025).toFixed(4);
+        ag.streak += 1;
+        ag.pnl = +(ag.pnl + legGain).toFixed(4);
+        fleetTotalPnlUsd = +(fleetTotalPnlUsd + legGain).toFixed(4);
+        playPulseTone(680 + ag.streak * 25, 130);
+        syncHudAgentOverlay();
+        renderCarrierRoster();
+        showToast(`${ag.id} rode Wave Leg #${ag.streak} (+$${legGain.toFixed(4)}) · GATE_SYM_02 Verified!`);
+      }
+
+      function completeRoundTripAndMint() {
+        const ag = getActiveAgent();
+        notarySeq += 1;
+        const oldTier = ag.tier;
+        if (ag.streak >= 12 && ag.tier < 5) ag.tier = 5;
+        else if (ag.streak >= 8 && ag.tier < 4) ag.tier = 4;
+        else if (ag.streak >= 5 && ag.tier < 3) ag.tier = 3;
+        else if (ag.streak >= 3 && ag.tier < 2) ag.tier = 2;
+        else if (ag.streak >= 14) ag.tier += 1;
+
+        const tierInfo = TIER_METADATA[Math.min(5, ag.tier)];
+        ag.tranche = ag.tier <= 5 ? tierInfo.tranche : ag.tranche * 1.5;
+        motherReserveUsd = +(motherReserveUsd + ag.pnl).toFixed(4);
+
+        const sealHash = Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+        ledgerEntries.unshift({
+          ts: new Date().toISOString().slice(11, 19) + "Z",
+          seq: notarySeq,
+          agent: ag.id,
+          tier: ag.tier,
+          badge: ag.tier <= 5 ? tierInfo.name : `Tier ${ag.tier} Infinite Wave Badge`,
+          streak: ag.streak,
+          pnl: `+$${ag.pnl.toFixed(4)}`,
+          cell: `DTC-${ag.id}-T${ag.tier}`,
+          seal: sealHash
+        });
+
+        playPulseTone(880, 220);
+        syncHudAgentOverlay();
+        renderCarrierRoster();
+        showToast(
+          ag.tier > oldTier
+            ? `⚓ Docked ${ag.id}! Promoted to Tier ${ag.tier} & reconciled +$${ag.pnl.toFixed(4)} to Mother Treasury!`
+            : `⚓ Docked ${ag.id}! Sealed ${ag.streak}-leg wave (+$${ag.pnl.toFixed(4)}) in SurfLedger!`
+        );
+      }
+
+      document.getElementById("btnInjectWaveImpulse").addEventListener("click", rideNextWaveLeg);
+      document.getElementById("btnBranchSortie").addEventListener("click", rideNextWaveLeg);
+      document.getElementById("btnCompleteRoundTrip").addEventListener("click", completeRoundTripAndMint);
+
+      document.getElementById("rngWaveAmp").addEventListener("input", function () {
+        waveAmp = parseFloat(this.value);
+        document.getElementById("lblWaveAmp").textContent = waveAmp.toFixed(1) + "x";
+      });
+      document.getElementById("rngWaveSpeed").addEventListener("input", function () {
+        waveSpeed = parseFloat(this.value);
+        document.getElementById("lblWaveSpeed").textContent = waveSpeed.toFixed(1) + "x";
+      });
+      document.getElementById("rngCandleDensity").addEventListener("input", function () {
+        candleDensity = parseInt(this.value, 10);
+        document.getElementById("lblCandleDensity").textContent = candleDensity + " BARS";
+      });
+
+      document.querySelectorAll(".equip-badge-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const tierNum = parseInt(this.getAttribute("data-equip-tier"), 10);
+          const ag = getActiveAgent();
+          ag.tier = tierNum;
+          ag.tranche = TIER_METADATA[tierNum].tranche;
+          ag.streak = TIER_METADATA[tierNum].minStreak;
+          syncHudAgentOverlay();
+          switchTab("hud");
+          playPulseTone(760, 150);
+          showToast(`Loaded Tier ${tierNum} (${TIER_METADATA[tierNum].name}) into Immersive Avatar HUD.`);
+        });
+      });
+
+      const avatarCanvas = document.getElementById("avatarCoreCanvas");
+      const oceanCanvas = document.getElementById("oceanWaveHudCanvas");
+
+      function resizeHudCanvases() {
+        if (avatarCanvas && avatarCanvas.parentElement) {
+          const cw = avatarCanvas.parentElement.clientWidth;
+          const ch = avatarCanvas.parentElement.clientHeight;
+          if (cw > 20 && ch > 20) {
+            avatarCanvas.width = cw;
+            avatarCanvas.height = ch;
+          }
+        }
+        if (oceanCanvas && oceanCanvas.parentElement) {
+          const ow = oceanCanvas.parentElement.clientWidth;
+          const oh = oceanCanvas.parentElement.clientHeight;
+          if (ow > 20 && oh > 20) {
+            oceanCanvas.width = ow;
+            oceanCanvas.height = oh;
+          }
+        }
+      }
+      window.addEventListener("resize", resizeHudCanvases);
+      resizeHudCanvases();
+
+      let animTick = 0;
+      function renderImmersiveLoops() {
+        animTick += 0.025 * waveSpeed;
+
+        if (avatarCanvas && avatarCanvas.width > 0) {
+          const ctx = avatarCanvas.getContext("2d");
+          const w = avatarCanvas.width;
+          const h = avatarCanvas.height;
+          ctx.clearRect(0, 0, w, h);
+
+          const cx = w / 2;
+          const cy = h / 2 - 6;
+
+          const grad = ctx.createRadialGradient(cx, cy, 8, cx, cy, Math.min(w, h) * 0.48);
+          grad.addColorStop(0, "rgba(34, 211, 238, 0.32)");
+          grad.addColorStop(0.55, "rgba(234, 179, 8, 0.10)");
+          grad.addColorStop(1, "rgba(4, 8, 17, 0)");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, w, h);
+
+          for (let r = 1; r <= 3; r++) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(animTick * (r % 2 === 0 ? -0.5 : 0.7) * r * 0.4);
+            ctx.strokeStyle = r === 2 ? "rgba(250, 204, 21, 0.65)" : "rgba(34, 211, 238, 0.6)";
+            ctx.lineWidth = 1.8;
+            ctx.setLineDash([10, 6]);
+            ctx.beginPath();
+            ctx.arc(0, 0, 24 + r * 18, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.strokeStyle = "#22d3ee";
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const ang = (i * Math.PI) / 3 - Math.PI / 6;
+            const rx = Math.cos(ang) * 32;
+            const ry = Math.sin(ang) * 32;
+            if (i === 0) ctx.moveTo(rx, ry);
+            else ctx.lineTo(rx, ry);
+          }
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.strokeStyle = "#facc15";
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          for (let x = -22; x <= 22; x += 2) {
+            const y = Math.sin(x * 0.35 + animTick * 3.2) * 8 * Math.cos(x * 0.05);
+            if (x === -22) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        if (oceanCanvas && oceanCanvas.width > 0) {
+          const ctx = oceanCanvas.getContext("2d");
+          const w = oceanCanvas.width;
+          const h = oceanCanvas.height;
+          ctx.clearRect(0, 0, w, h);
+
+          ctx.strokeStyle = "rgba(14, 165, 233, 0.14)";
+          ctx.lineWidth = 1;
+          for (let y = h * 0.35; y < h; y += 26) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+          }
+
+          const layers = [
+            { color: "rgba(6, 182, 212, 0.24)", stroke: "rgba(34, 211, 238, 0.72)", amp: 24 * waveAmp, freq: 0.012, speed: 1.0, yOff: h * 0.68 },
+            { color: "rgba(16, 185, 129, 0.18)", stroke: "rgba(52, 211, 153, 0.82)", amp: 32 * waveAmp, freq: 0.016, speed: 1.35, yOff: h * 0.60 },
+            { color: "rgba(234, 179, 8, 0.14)", stroke: "rgba(250, 204, 21, 0.9)", amp: 18 * waveAmp, freq: 0.021, speed: 1.7, yOff: h * 0.74 }
+          ];
+
+          layers.forEach((layer) => {
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            for (let x = 0; x <= w; x += 6) {
+              const y =
+                layer.yOff +
+                Math.sin(x * layer.freq - animTick * layer.speed) * layer.amp +
+                Math.cos(x * layer.freq * 0.5 + animTick * 0.8) * (layer.amp * 0.4);
+              ctx.lineTo(x, y);
+            }
+            ctx.lineTo(w, h);
+            ctx.closePath();
+            ctx.fillStyle = layer.color;
+            ctx.fill();
+
+            ctx.beginPath();
+            for (let x = 0; x <= w; x += 6) {
+              const y =
+                layer.yOff +
+                Math.sin(x * layer.freq - animTick * layer.speed) * layer.amp +
+                Math.cos(x * layer.freq * 0.5 + animTick * 0.8) * (layer.amp * 0.4);
+              if (x === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = layer.stroke;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          });
+
+          const stepX = (w * 0.78) / candleDensity;
+          const startX = w * 0.11;
+          for (let i = 0; i < candleDensity; i++) {
+            const cx = startX + i * stepX;
+            const waveY =
+              h * 0.60 +
+              Math.sin(cx * 0.016 - animTick * 1.35) * (32 * waveAmp) +
+              Math.cos(cx * 0.008 + animTick * 0.8) * (12 * waveAmp);
+            const barHeight = 18 + ((i * 7) % 28) * waveAmp * 0.6;
+            const topY = waveY - barHeight - 8;
+
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.8)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, topY - 8);
+            ctx.lineTo(cx, waveY + 4);
+            ctx.stroke();
+
+            ctx.fillStyle = i % 3 === 0 ? "rgba(250, 204, 21, 0.86)" : "rgba(34, 211, 238, 0.86)";
+            ctx.fillRect(cx - 4, topY, 8, barHeight);
+          }
+
+          const podX = w * 0.54 + Math.sin(animTick * 0.7) * (w * 0.16);
+          const podY =
+            h * 0.60 +
+            Math.sin(podX * 0.016 - animTick * 1.35) * (32 * waveAmp) +
+            Math.cos(podX * 0.008 + animTick * 0.8) * (12 * waveAmp) -
+            16;
+
+          ctx.save();
+          ctx.translate(podX, podY);
+          ctx.strokeStyle = "rgba(34, 211, 238, 0.9)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(-48, 12);
+          ctx.lineTo(0, 4);
+          ctx.stroke();
+
+          ctx.fillStyle = "#0f172a";
+          ctx.strokeStyle = "#22d3ee";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-24, 4);
+          ctx.lineTo(-10, -8);
+          ctx.lineTo(18, -6);
+          ctx.lineTo(28, 4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = "#facc15";
+          ctx.beginPath();
+          ctx.arc(2, -1, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        requestAnimationFrame(renderImmersiveLoops);
+      }
+      requestAnimationFrame(renderImmersiveLoops);
+
+      const forgeCanvas = document.getElementById("proceduralBadgeCanvas");
+
+      const PALETTES = {
+        cyan_gold: { primary: "#22d3ee", secondary: "#facc15", accent: "#0ea5e9", bg: "#050b18" },
+        ultraviolet_plasma: { primary: "#c084fc", secondary: "#f472b6", accent: "#38bdf8", bg: "#090514" },
+        crimson_sovereign: { primary: "#fb7185", secondary: "#facc15", accent: "#f43f5e", bg: "#14060b" },
+        emerald_quant: { primary: "#34d399", secondary: "#22d3ee", accent: "#eab308", bg: "#04120e" }
+      };
+
+      function renderProceduralBadgeCanvas() {
+        if (!forgeCanvas) return;
+        const ctx = forgeCanvas.getContext("2d");
+        const w = forgeCanvas.width;
+        const h = forgeCanvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+
+        const tierNum = parseInt(document.getElementById("forgeTierInput").value || "6", 10);
+        const title = document.getElementById("forgeBadgeTitle").value || `Tier ${tierNum} Wave Surfer`;
+        const streakLegs = Math.min(40, Math.max(2, parseInt(document.getElementById("forgeStreakLegs").value || "18", 10)));
+        const trancheUsd = parseFloat(document.getElementById("forgeTrancheUsd").value || "100000");
+        const waveStyle = document.getElementById("forgeWaveStyle").value;
+        const paletteKey = document.getElementById("forgePalette").value;
+        const pal = PALETTES[paletteKey] || PALETTES.cyan_gold;
+
+        document.getElementById("forgePreviewHeader").textContent = `Tier ${tierNum} — ${title}`;
+
+        const bgGrad = ctx.createRadialGradient(cx, cy, 40, cx, cy, w * 0.55);
+        bgGrad.addColorStop(0, "#111c35");
+        bgGrad.addColorStop(1, pal.bg);
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        const wingCount = Math.min(12, 3 + Math.floor(tierNum / 2));
+        for (let side = -1; side <= 1; side += 2) {
+          for (let i = 0; i < wingCount; i++) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            const angle = side * (0.45 + i * 0.08);
+            ctx.rotate(angle);
+            ctx.fillStyle = i % 2 === 0 ? pal.secondary : pal.primary;
+            ctx.globalAlpha = 0.75;
+            ctx.beginPath();
+            ctx.moveTo(side * 240, -140 + i * 20);
+            ctx.lineTo(side * 320, -175 + i * 18);
+            ctx.lineTo(side * 270, -115 + i * 20);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        function drawHex(radius, strokeColor, lineWidth, fillStyle) {
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const ang = (i * Math.PI) / 3 - Math.PI / 2;
+            const x = cx + Math.cos(ang) * radius;
+            const y = cy + Math.sin(ang) * radius;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          if (fillStyle) {
+            ctx.fillStyle = fillStyle;
+            ctx.fill();
+          }
+          if (strokeColor) {
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+          }
+        }
+
+        drawHex(265, pal.secondary, 10, "#081121");
+        drawHex(242, pal.primary, 4, "#050b16");
+
+        const barCount = Math.min(20, streakLegs);
+        const startBarX = cx - 95;
+        const barStep = 210 / barCount;
+        for (let i = 0; i < barCount; i++) {
+          const bx = startBarX + i * barStep;
+          const bh = 35 + (i / barCount) * 165;
+          const by = cy + 95 - bh;
+          ctx.strokeStyle = pal.secondary;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(bx + 3, by - 12);
+          ctx.lineTo(bx + 3, by + bh + 8);
+          ctx.stroke();
+
+          ctx.fillStyle = i % 2 === 0 ? pal.primary : pal.secondary;
+          ctx.globalAlpha = 0.88;
+          ctx.fillRect(bx, by, Math.max(5, barStep - 4), bh);
+          ctx.globalAlpha = 1.0;
+        }
+
+        ctx.save();
+        ctx.strokeStyle = pal.primary;
+        ctx.lineWidth = 7;
+        ctx.shadowColor = pal.primary;
+        ctx.shadowBlur = 18;
+        for (let arc = 0; arc < 4; arc++) {
+          ctx.beginPath();
+          const r = 135 - arc * 22;
+          const startAng = waveStyle === "quantum_singularity" ? 0 : Math.PI * 0.35;
+          const endAng = waveStyle === "quantum_singularity" ? Math.PI * 1.85 : Math.PI * 1.65;
+          ctx.arc(cx - 35, cy + 5, r, startAng, endAng, false);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.fillStyle = pal.secondary;
+        ctx.font = "bold 26px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(`TIER ${tierNum} · ${streakLegs} LEGS`, cx, cy - 175);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 20px sans-serif";
+        ctx.fillText(title.toUpperCase().slice(0, 26), cx, cy + 160);
+
+        ctx.fillStyle = pal.primary;
+        ctx.font = "bold 17px monospace";
+        ctx.fillText(`DTC TRANCHE: $${trancheUsd.toLocaleString("en-US")}`, cx, cy + 192);
+      }
+
+      ["forgeTierInput", "forgeBadgeTitle", "forgeStreakLegs", "forgeTrancheUsd", "forgeWaveStyle", "forgePalette"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener("input", renderProceduralBadgeCanvas);
+          el.addEventListener("change", renderProceduralBadgeCanvas);
+        }
+      });
+
+      function applyForgePreset(tier, title, streak, tranche, style, palette) {
+        document.getElementById("forgeTierInput").value = tier;
+        document.getElementById("forgeBadgeTitle").value = title;
+        document.getElementById("forgeStreakLegs").value = streak;
+        document.getElementById("forgeTrancheUsd").value = tranche;
+        document.getElementById("forgeWaveStyle").value = style;
+        document.getElementById("forgePalette").value = palette;
+        playPulseTone(700, 110);
+        renderProceduralBadgeCanvas();
+      }
+
+      document.getElementById("btnPresetTier6").addEventListener("click", () =>
+        applyForgePreset(6, "Abyssal Leviathan Surfer", 18, 100000, "tsunami_crown", "cyan_gold")
+      );
+      document.getElementById("btnPresetTier12").addEventListener("click", () =>
+        applyForgePreset(12, "Quantum Sovereign Navigator", 36, 500000, "quantum_singularity", "ultraviolet_plasma")
+      );
+      document.getElementById("btnPresetTier33").addEventListener("click", () =>
+        applyForgePreset(33, "Omega Resonance Admiral", 99, 2500000, "double_pipeline", "crimson_sovereign")
+      );
+      document.getElementById("btnPresetTier100").addEventListener("click", () =>
+        applyForgePreset(100, "Centurion Singularity Fleet", 300, 25000000, "quantum_singularity", "emerald_quant")
+      );
+
+      function renderCustomMintedList() {
+        const container = document.getElementById("customMintedTiersList");
+        if (!container) return;
+        container.innerHTML = customMintedTiers
+          .map(
+            (t) => `
+          <div style="padding:8px 10px; border-radius:8px; background:#091326; border:1px solid rgba(250,204,21,0.4); display:flex; align-items:center; justify-content:space-between; font-size:11px;" class="mono">
+            <div>
+              <div style="color:#fde047; font-weight:700;">TIER ${t.tier} · ${t.title}</div>
+              <div style="color:#94a3b8;">${t.streak} Legs · $${Number(t.tranche).toLocaleString("en-US")} DTC · Seal ${t.hash}</div>
+            </div>
+            <span class="badge-pill-cyan">ACTIVE</span>
+          </div>`
+          )
+          .join("");
+      }
+
+      document.getElementById("btnMintCustomTier").addEventListener("click", () => {
+        const tier = parseInt(document.getElementById("forgeTierInput").value || "6", 10);
+        const title = document.getElementById("forgeBadgeTitle").value || `Tier ${tier} Surfer`;
+        const streak = parseInt(document.getElementById("forgeStreakLegs").value || "18", 10);
+        const tranche = parseFloat(document.getElementById("forgeTrancheUsd").value || "100000");
+        const style = document.getElementById("forgeWaveStyle").value;
+        const palette = document.getElementById("forgePalette").value;
+        const hash = Math.random().toString(16).substring(2, 10) + "..." + Math.random().toString(16).substring(2, 6);
+
+        customMintedTiers.unshift({ tier, title, streak, tranche, style, palette, hash });
+        renderCustomMintedList();
+        playPulseTone(840, 180);
+        showToast(`Minted Tier ${tier} (${title}) with $${tranche.toLocaleString("en-US")} Deployable Treasury to Fleet Registry!`);
+      });
+
+      document.getElementById("btnDownloadBadgePng").addEventListener("click", () => {
+        renderProceduralBadgeCanvas();
+        const tier = document.getElementById("forgeTierInput").value || "6";
+        const link = document.createElement("a");
+        link.download = `aegentix_cybersurf_tier_${tier}_badge.png`;
+        link.href = forgeCanvas.toDataURL("image/png");
+        link.click();
+        playPulseTone(780, 140);
+        showToast(`Exported high-resolution PNG for Tier ${tier} Surfing Badge.`);
+      });
+
+      function renderCarrierRoster() {
+        const tbody = document.getElementById("carrierRosterTableBody");
+        if (!tbody) return;
+        tbody.innerHTML = swarmRoster
+          .map(
+            (ag) => `
+          <tr>
+            <td style="font-weight:700; color:#67e8f9;">${ag.id}</td>
+            <td style="color:#cbd5e1;">${ag.role} <span style="color:#64748b;">(${ag.kernel})</span></td>
+            <td style="color:#94a3b8;">${ag.wallet}</td>
+            <td><span class="badge-pill-gold">Tier ${ag.tier}</span></td>
+            <td style="text-align:right; color:#34d399; font-weight:700;">$${ag.tranche.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+            <td style="text-align:right; color:#67e8f9; font-weight:700;">${ag.streak} legs</td>
+            <td style="text-align:right; color:#fde047; font-weight:700;">+$${ag.pnl.toFixed(4)}</td>
+            <td style="text-align:center;">
+              <button data-sortie-agent="${ag.id}" class="launch-row-sortie-btn btn-cyan mono">
+                Launch Wave Sortie
+              </button>
+            </td>
+          </tr>`
+          )
+          .join("");
+
+        tbody.querySelectorAll(".launch-row-sortie-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            activeAgentId = this.getAttribute("data-sortie-agent");
+            document.getElementById("hudActiveAgentSelect").value = activeAgentId;
+            rideNextWaveLeg();
+            completeRoundTripAndMint();
+          });
+        });
+
+        const streamEl = document.getElementById("surfLedgerStream");
+        if (streamEl) {
+          streamEl.innerHTML = ledgerEntries
+            .map(
+              (e) =>
+                `<div style="padding:6px 8px; margin-bottom:4px; border-radius:6px; background:#091326; border:1px solid #1e293b;">
+                  <span style="color:#64748b;">[${e.ts}]</span>
+                  <span style="color:#fde047;">SEQ#${e.seq}</span> ·
+                  <span style="color:#67e8f9; font-weight:700;">${e.agent}</span> ·
+                  <span style="color:#ffffff;">${e.badge}</span> ·
+                  <span style="color:#34d399;">${e.streak} legs (${e.pnl})</span> ·
+                  <span style="color:#94a3b8;">Cell: ${e.cell} · Seal: ${e.seal}</span>
+                </div>`
+            )
+            .join("");
+        }
+      }
+
+      document.getElementById("btnLaunchAllSwarm").addEventListener("click", () => {
+        swarmRoster.forEach((ag) => {
+          const gain = +(0.012 + Math.random() * 0.035).toFixed(4);
+          ag.streak += 2;
+          ag.pnl = +(ag.pnl + gain).toFixed(4);
+          fleetTotalPnlUsd = +(fleetTotalPnlUsd + gain).toFixed(4);
+          motherReserveUsd = +(motherReserveUsd + gain).toFixed(4);
+        });
+        notarySeq += 1;
+        syncHudAgentOverlay();
+        renderCarrierRoster();
+        playPulseTone(920, 240);
+        showToast("Launched all 8 Swarm Nodes from CVN-AEGENTIX-01! All round-trip waves settled positive.");
+      });
+
+      document.getElementById("btnCopyLedgerJson").addEventListener("click", () => {
+        const jsonl = ledgerEntries.map((e) => JSON.stringify(e)).join("\n");
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = jsonl;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          showToast("Copied surf_ledger.jsonl records to clipboard.");
+        } catch (err) {
+          showToast("Ledger ready for export.");
+        }
+      });
+
+      syncHudAgentOverlay();
+      renderCustomMintedList();
+      renderProceduralBadgeCanvas();
+      renderCarrierRoster();
+    })();
+  </script>
+</body>
+</html>

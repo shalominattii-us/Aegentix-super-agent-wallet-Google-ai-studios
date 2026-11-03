@@ -4,7 +4,7 @@ import { AutonomousSignal } from '../types';
 
 interface AutonomousSignalsFeedProps {
   signals: AutonomousSignal[];
-  onExecuteSignal: (signalId: string) => void;
+  onExecuteSignal: (signalId: string, signalObj?: any) => void;
   isExecuting: boolean;
 }
 
@@ -125,7 +125,7 @@ export const AutonomousSignalsFeed: React.FC<AutonomousSignalsFeedProps> = ({
 
                     {isPending && (
                       <button
-                        onClick={() => onExecuteSignal(sig.id)}
+                        onClick={() => onExecuteSignal(sig.id, sig)}
                         disabled={isExecuting}
                         className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded transition-colors disabled:opacity-50"
                       >

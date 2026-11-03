@@ -1,4 +1,77 @@
 rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: {userId} (matches Firebase Auth request.auth.uid)
+// Fields:
+//   - uid: string (required, 1..128 chars, immutable, must equal request.auth.uid)
+//   - email: string (required, 3..256 chars, immutable except by admin)
+//   - createdAt: string (required, 1..64 chars, ISO timestamp, immutable)
+//   - role: string (required, enum ['user', 'admin'], immutable except by admin)
+//   - displayName: string | null (optional, <= 120 chars)
+//   - photoURL: string | null (optional, <= 1024 chars)
+//   - lastLoginAt: string (optional, <= 64 chars)
+//   - moltbookHandle: string | null (optional, <= 80 chars)
+//
+// Subcollection: users/{userId}/abilities_history
+// Document ID: {recordId}
+// Fields:
+//   - id: string (required, 1..128 chars, immutable)
+//   - abilityId: string (required, 1..100 chars)
+//   - abilityName: string (optional, <= 200 chars)
+//   - category: string (optional, <= 100 chars)
+//   - prompt: string (required, 1..10000 chars)
+//   - output: string (required, 1..50000 chars)
+//   - createdAt: string (required, 1..64 chars, immutable)
+//
+// Subcollection: users/{userId}/chat_messages
+// Document ID: {messageId}
+// Fields:
+//   - id: string (required, 1..128 chars, immutable)
+//   - role: string (required, enum ['user', 'model', 'system'])
+//   - text: string (required, 1..20000 chars)
+//   - createdAt: string (required, 1..64 chars, immutable)
+//   - model: string (optional, <= 100 chars)
+//
+// Subcollection: users/{userId}/portfolio_plans
+// Document ID: {planId}
+// Fields:
+//   - id: string (required, 1..128 chars, immutable)
+//   - title: string (required, 1..200 chars)
+//   - initialCapitalUsd: number (required, 0..1000000000000)
+//   - riskProfile: string (required, enum ['conservative', 'moderate', 'aggressive', 'sovereign'])
+//   - horizon: string (optional, <= 100 chars)
+//   - markdownPlan: string (required, 1..50000 chars)
+//   - createdAt: string (required, 1..64 chars, immutable)
+//
+// Subcollection: users/{userId}/trading_credentials
+// Document ID: {credentialId}
+// Fields:
+//   - id: string (required, 1..128 chars, immutable)
+//   - venue: string (required, 1..100 chars)
+//   - mode: string (optional, enum ['paper', 'live', 'testnet', 'sandbox'])
+//   - label: string (required, 1..150 chars)
+//   - apiKeyMasked: string (optional, <= 128 chars)
+//   - permissions: list (optional, <= 20 items)
+//   - status: string (required, enum ['active', 'revoked', 'expired', 'pending'])
+//   - createdAt: string (required, 1..64 chars, immutable)
+//
+// Subcollection: users/{userId}/cybergym_credentials
+// Document ID: {credentialId}
+// Fields:
+//   - id: string (required, 1..128 chars, immutable)
+//   - level: int (required, 1..10)
+//   - moduleId: string (optional, <= 100 chars)
+//   - title: string (required, 1..200 chars)
+//   - score: number (required, 0..100)
+//   - certificateHash: string (optional, <= 256 chars)
+//   - issuedAt: string (required, 1..64 chars, immutable)
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
     // Global Safety Net: Default-Deny Catch-All
@@ -6,95 +79,148 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ===============================================================
     // Reusable Hardened Global Helpers
+    // ===============================================================
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
+
     function incoming() {
       return request.resource.data;
     }
+
     function existing() {
       return resource.data;
     }
+
     function isSignedIn() {
       return request.auth != null;
     }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Validation Blueprint for User Profiles
+    function isAdmin() {
+      return isSignedIn() &&
+        (request.auth.token.get('role', '') == 'admin' ||
+         request.auth.token.get('admin', false) == true);
+    }
+
+    // ===============================================================
+    // Domain Validators (Called on BOTH create and update)
+    // ===============================================================
+
+    // 1. User Profile Validator
     function isValidUser(data) {
-      return data.keys().hasAll(['uid', 'email']) &&
-             data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'lastLoginAt', 'moltbookHandle']) &&
-             data.uid is string && data.uid.size() <= 128 && data.uid == request.auth.uid &&
-             data.email is string && data.email.size() <= 256;
+      return data.keys().hasAll(['uid', 'email', 'createdAt', 'role']) &&
+             data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'createdAt', 'lastLoginAt', 'role', 'moltbookHandle']) &&
+             data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid == request.auth.uid &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 256 &&
+             data.createdAt is string && data.createdAt.size() >= 1 && data.createdAt.size() <= 64 &&
+             data.role in ['user', 'admin'] &&
+             (!('displayName' in data) || data.displayName == null || (data.displayName is string && data.displayName.size() <= 120)) &&
+             (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1024)) &&
+             (!('lastLoginAt' in data) || (data.lastLoginAt is string && data.lastLoginAt.size() <= 64)) &&
+             (!('moltbookHandle' in data) || data.moltbookHandle == null || (data.moltbookHandle is string && data.moltbookHandle.size() <= 80));
     }
 
-    // Validation Blueprint for AI Ability Records
+    // 2. AI Ability Record Validator
     function isValidAbilityRecord(data) {
-      return data.keys().hasAll(['type', 'title', 'createdAt']) &&
-             data.type is string && data.type.size() <= 64 &&
-             data.title is string && data.title.size() <= 512 &&
-             data.createdAt is string && data.createdAt.size() <= 64;
+      return data.keys().hasAll(['id', 'abilityId', 'prompt', 'output', 'createdAt']) &&
+             data.keys().hasOnly(['id', 'abilityId', 'abilityName', 'category', 'prompt', 'output', 'createdAt']) &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.abilityId is string && data.abilityId.size() >= 1 && data.abilityId.size() <= 100 &&
+             (!('abilityName' in data) || (data.abilityName is string && data.abilityName.size() <= 200)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 100)) &&
+             data.prompt is string && data.prompt.size() >= 1 && data.prompt.size() <= 10000 &&
+             data.output is string && data.output.size() >= 1 && data.output.size() <= 50000 &&
+             data.createdAt is string && data.createdAt.size() >= 1 && data.createdAt.size() <= 64;
     }
 
-    // Validation Blueprint for Chat Messages
+    // 3. Chat Message Validator
     function isValidChatMessage(data) {
-      return data.keys().hasAll(['role', 'text', 'timestamp']) &&
+      return data.keys().hasAll(['id', 'role', 'text', 'createdAt']) &&
+             data.keys().hasOnly(['id', 'role', 'text', 'createdAt', 'model']) &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
              data.role in ['user', 'model', 'system'] &&
-             data.text is string && data.text.size() <= 10000 &&
-             data.timestamp is string && data.timestamp.size() <= 64;
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 20000 &&
+             data.createdAt is string && data.createdAt.size() >= 1 && data.createdAt.size() <= 64 &&
+             (!('model' in data) || (data.model is string && data.model.size() <= 100));
     }
 
-    // Validation Blueprint for Portfolio Growth Plans
+    // 4. Portfolio Growth Plan Validator
     function isValidPortfolioPlan(data) {
-      return data.keys().hasAll(['planName', 'initialCapitalUsd', 'updatedAt']) &&
-             data.planName is string && data.planName.size() <= 128 &&
-             data.initialCapitalUsd is number &&
-             data.updatedAt is string && data.updatedAt.size() <= 64;
+      return data.keys().hasAll(['id', 'title', 'initialCapitalUsd', 'riskProfile', 'markdownPlan', 'createdAt']) &&
+             data.keys().hasOnly(['id', 'title', 'initialCapitalUsd', 'riskProfile', 'horizon', 'markdownPlan', 'createdAt']) &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.initialCapitalUsd is number && data.initialCapitalUsd >= 0 && data.initialCapitalUsd <= 1000000000000 &&
+             data.riskProfile in ['conservative', 'moderate', 'aggressive', 'sovereign'] &&
+             (!('horizon' in data) || (data.horizon is string && data.horizon.size() <= 100)) &&
+             data.markdownPlan is string && data.markdownPlan.size() >= 1 && data.markdownPlan.size() <= 50000 &&
+             data.createdAt is string && data.createdAt.size() >= 1 && data.createdAt.size() <= 64;
     }
 
-    // Validation Blueprint for Trading Credentials
+    // 5. Trading Credential Validator
     function isValidTradingCredential(data) {
-      return data.keys().hasAll(['provider', 'name', 'type', 'status', 'createdAt']) &&
-             data.provider is string && data.provider.size() <= 64 &&
-             data.name is string && data.name.size() <= 128 &&
-             data.type is string && data.type.size() <= 64 &&
-             data.status is string && data.status.size() <= 32 &&
-             data.createdAt is string && data.createdAt.size() <= 64;
+      return data.keys().hasAll(['id', 'venue', 'label', 'status', 'createdAt']) &&
+             data.keys().hasOnly(['id', 'venue', 'mode', 'label', 'apiKeyMasked', 'permissions', 'status', 'createdAt']) &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.venue is string && data.venue.size() >= 1 && data.venue.size() <= 100 &&
+             (!('mode' in data) || data.mode in ['paper', 'live', 'testnet', 'sandbox']) &&
+             data.label is string && data.label.size() >= 1 && data.label.size() <= 150 &&
+             (!('apiKeyMasked' in data) || (data.apiKeyMasked is string && data.apiKeyMasked.size() <= 128)) &&
+             (!('permissions' in data) || (data.permissions is list && data.permissions.size() <= 20)) &&
+             data.status in ['active', 'revoked', 'expired', 'pending'] &&
+             data.createdAt is string && data.createdAt.size() >= 1 && data.createdAt.size() <= 64;
     }
 
-    // Validation Blueprint for CyberGym Credentials
+    // 6. CyberGym Credential Validator
     function isValidCyberGymCredential(data) {
-      return data.keys().hasAll(['athleteOrEntity', 'title', 'category', 'status', 'issuedAt']) &&
-             data.athleteOrEntity is string && data.athleteOrEntity.size() <= 128 &&
-             data.title is string && data.title.size() <= 256 &&
-             data.category is string && data.category.size() <= 64 &&
-             data.status is string && data.status.size() <= 32 &&
-             data.issuedAt is string && data.issuedAt.size() <= 64;
+      return data.keys().hasAll(['id', 'level', 'title', 'score', 'issuedAt']) &&
+             data.keys().hasOnly(['id', 'level', 'moduleId', 'title', 'score', 'certificateHash', 'issuedAt']) &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.level is int && data.level >= 1 && data.level <= 10 &&
+             (!('moduleId' in data) || (data.moduleId is string && data.moduleId.size() <= 100)) &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.score is number && data.score >= 0 && data.score <= 100 &&
+             (!('certificateHash' in data) || (data.certificateHash is string && data.certificateHash.size() <= 256)) &&
+             data.issuedAt is string && data.issuedAt.size() >= 1 && data.issuedAt.size() <= 64;
     }
 
-    // Boot-time connectivity test path
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // Boot-time connectivity test path (authenticated read only, no writes)
     match /test/{docId} {
-      allow get: if true;
+      allow get: if isSignedIn() && docId == 'connection';
       allow list, write: if false;
     }
 
     // User Accounts & Data Isolated per UID
     match /users/{userId} {
-      allow get: if isValidId(userId) && isOwner(userId);
-      allow list: if false;
-      allow create: if isValidId(userId) && isOwner(userId) && isValidUser(incoming());
-      allow update: if isValidId(userId) && isOwner(userId) && isValidUser(incoming()) && incoming().uid == existing().uid;
-      allow delete: if false;
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(userId) && isOwner(userId) && isValidUser(request.resource.data) &&
+                    (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isValidId(userId) && (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) &&
+                    request.resource.data.uid == resource.data.uid &&
+                    request.resource.data.createdAt == resource.data.createdAt &&
+                    (request.resource.data.email == resource.data.email || isAdmin()) &&
+                    (request.resource.data.role == resource.data.role || isAdmin());
+      allow delete: if isValidId(userId) && isAdmin();
 
       // User's AI Ability History
       match /abilities_history/{recordId} {
         allow get: if isValidId(recordId) && isOwner(userId);
         allow list: if isOwner(userId);
-        allow create: if isValidId(recordId) && isOwner(userId) && isValidAbilityRecord(incoming());
-        allow update: if isValidId(recordId) && isOwner(userId) && isValidAbilityRecord(incoming());
+        allow create: if isValidId(recordId) && isOwner(userId) && isValidAbilityRecord(request.resource.data);
+        allow update: if isValidId(recordId) && isOwner(userId) && isValidAbilityRecord(request.resource.data) &&
+                      request.resource.data.id == resource.data.id &&
+                      request.resource.data.createdAt == resource.data.createdAt;
         allow delete: if isValidId(recordId) && isOwner(userId);
       }
 
@@ -102,8 +228,10 @@ service cloud.firestore {
       match /chat_messages/{messageId} {
         allow get: if isValidId(messageId) && isOwner(userId);
         allow list: if isOwner(userId);
-        allow create: if isValidId(messageId) && isOwner(userId) && isValidChatMessage(incoming());
-        allow update: if false;
+        allow create: if isValidId(messageId) && isOwner(userId) && isValidChatMessage(request.resource.data);
+        allow update: if isValidId(messageId) && isOwner(userId) && isValidChatMessage(request.resource.data) &&
+                      request.resource.data.id == resource.data.id &&
+                      request.resource.data.createdAt == resource.data.createdAt;
         allow delete: if isValidId(messageId) && isOwner(userId);
       }
 
@@ -111,8 +239,10 @@ service cloud.firestore {
       match /portfolio_plans/{planId} {
         allow get: if isValidId(planId) && isOwner(userId);
         allow list: if isOwner(userId);
-        allow create: if isValidId(planId) && isOwner(userId) && isValidPortfolioPlan(incoming());
-        allow update: if isValidId(planId) && isOwner(userId) && isValidPortfolioPlan(incoming());
+        allow create: if isValidId(planId) && isOwner(userId) && isValidPortfolioPlan(request.resource.data);
+        allow update: if isValidId(planId) && isOwner(userId) && isValidPortfolioPlan(request.resource.data) &&
+                      request.resource.data.id == resource.data.id &&
+                      request.resource.data.createdAt == resource.data.createdAt;
         allow delete: if isValidId(planId) && isOwner(userId);
       }
 
@@ -120,8 +250,10 @@ service cloud.firestore {
       match /trading_credentials/{credentialId} {
         allow get: if isValidId(credentialId) && isOwner(userId);
         allow list: if isOwner(userId);
-        allow create: if isValidId(credentialId) && isOwner(userId) && isValidTradingCredential(incoming());
-        allow update: if isValidId(credentialId) && isOwner(userId) && isValidTradingCredential(incoming());
+        allow create: if isValidId(credentialId) && isOwner(userId) && isValidTradingCredential(request.resource.data);
+        allow update: if isValidId(credentialId) && isOwner(userId) && isValidTradingCredential(request.resource.data) &&
+                      request.resource.data.id == resource.data.id &&
+                      request.resource.data.createdAt == resource.data.createdAt;
         allow delete: if isValidId(credentialId) && isOwner(userId);
       }
 
@@ -129,8 +261,10 @@ service cloud.firestore {
       match /cybergym_credentials/{credentialId} {
         allow get: if isValidId(credentialId) && isOwner(userId);
         allow list: if isOwner(userId);
-        allow create: if isValidId(credentialId) && isOwner(userId) && isValidCyberGymCredential(incoming());
-        allow update: if isValidId(credentialId) && isOwner(userId) && isValidCyberGymCredential(incoming());
+        allow create: if isValidId(credentialId) && isOwner(userId) && isValidCyberGymCredential(request.resource.data);
+        allow update: if isValidId(credentialId) && isOwner(userId) && isValidCyberGymCredential(request.resource.data) &&
+                      request.resource.data.id == resource.data.id &&
+                      request.resource.data.issuedAt == resource.data.issuedAt;
         allow delete: if isValidId(credentialId) && isOwner(userId);
       }
     }

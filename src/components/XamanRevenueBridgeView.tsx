@@ -136,7 +136,10 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
     }
   };
 
-  const handleTriggerStrategy = async (strategy: 'DEX_ARBITRAGE' | 'AMM_YIELD' | 'RESERVE_HARVEST', pair?: string) => {
+  const handleTriggerStrategy = async (
+    strategy: 'DEX_ARBITRAGE' | 'AMM_YIELD' | 'RESERVE_HARVEST' | 'EOC_CIRCULATION' | 'TOKEN_SWEEP',
+    pair?: string
+  ) => {
     setIsDispatching(true);
     setDispatchError(null);
     setIsSignedSimulated(false);
@@ -165,16 +168,43 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
     }
   };
 
-  const handleSimulateSign = () => {
+  const handleSimulateSign = async () => {
     setIsSignedSimulated(true);
-    if (activePayload) {
-      setActivePayload({
-        ...activePayload,
-        status: 'SIGNED_AND_SUBMITTED',
+    if (!activePayload) return;
+
+    try {
+      const res = await fetch('/api/xaman/submit-payload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payloadId: activePayload.payloadId,
+          simulated: false,
+        }),
       });
-    }
-    if (onNotify) {
-      onNotify('Simulation Mode: Transaction validated & ledger settlement simulated on XRPL Cluster.', 'SUCCESS');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActivePayload({
+          ...activePayload,
+          status: 'SIGNED_AND_SUBMITTED',
+        });
+        if (data.updatedBalances && wallet) {
+          fetchWalletData(true);
+        }
+        if (onNotify) {
+          const txShort = data.txHash ? `${data.txHash.slice(0, 14)}...` : 'XRPL-TX-COMMITTED';
+          const opShare = data.rewarding?.humanOperatorSplitUsd ? `$${data.rewarding.humanOperatorSplitUsd.toFixed(2)}` : '$0.00';
+          onNotify(
+            `🚀 XRPL On-Chain Authorized! Tx: ${txShort} | Ledger #${data.ledgerIndex || 'VALIDATED'} | Operator Alpha: +${opShare}`,
+            'SUCCESS'
+          );
+        }
+      } else {
+        throw new Error(data.error || data.detail || `Submission rejected (HTTP ${res.status})`);
+      }
+    } catch (err: any) {
+      if (onNotify) {
+        onNotify(`XRPL Submission Blocked: ${err?.message || 'Live Xaman signing bridge required (503/401)'}`, 'ALERT');
+      }
     }
   };
 
@@ -449,79 +479,104 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Strategy Card 1 */}
-            <div className="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-cyan-700/40 hover:border-cyan-400/60 transition shadow-xl flex flex-col justify-between">
-              <div className="space-y-4">
+          {/* Sovereign Treasury Mandate Banner */}
+          <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-950/80 via-slate-900 to-purple-950/80 border border-cyan-500/40 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>TREASURY POLICY: ALL PROFITS AUTO-STORED IN NATIVE XRP</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">ENFORCED</span>
+                </div>
+                <div className="text-xs text-slate-300">
+                  Every DEX spread, AMM swap fee, token liquidation, and dormant trustline release is routed directly into spendable native XRP balance.
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <span className="text-slate-400">Target Asset:</span>
+              <span className="px-2.5 py-1 rounded-md bg-slate-950 border border-cyan-500/50 text-cyan-200 font-bold">15.556 XRP (+0.60 Reclaimable)</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Strategy Card 1: EOC Public Circulation Ladder */}
+            <div className="p-5 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-purple-600/50 hover:border-purple-400 transition shadow-xl flex flex-col justify-between">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-1 rounded-md bg-cyan-950 border border-cyan-600/40 text-cyan-300 text-xs font-mono">
-                    XRPL DEX Order Book
+                  <span className="px-2 py-0.5 rounded-md bg-purple-950 border border-purple-600/40 text-purple-300 text-[11px] font-mono font-bold">
+                    EOC CIRCULATION
                   </span>
-                  <span className="text-emerald-400 text-xs font-semibold">18.4% APR Target</span>
+                  <span className="text-emerald-400 text-xs font-bold font-mono">+5.00 XRP Harvest</span>
                 </div>
 
-                <div className="space-y-1.5">
-                  <h3 className="text-lg font-bold text-white">EOC / XRP Spread Harvester</h3>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-white flex items-center gap-1.5">
+                    <span>EOC Circulation Ladder</span>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  </h3>
                   <p className="text-slate-300 text-xs leading-relaxed">
-                    Places automated maker limit orders with 10,000 EOC on the decentralized orderbook to capture 0.85% bid-ask spread against native XRP.
+                    Places 50,000 sovereign EOC maker order on XRPL public DEX to circulate supply across ecosystem bots. All 5.0 XRP proceeds lock straight into wallet.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1 text-xs font-mono">
+                <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1 text-xs font-mono">
                   <div className="flex justify-between text-slate-400">
-                    <span>Transaction Type:</span>
-                    <span className="text-cyan-300">OfferCreate</span>
+                    <span>Order:</span>
+                    <span className="text-purple-300 font-bold">OfferCreate (Sell EOC)</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
-                    <span>Target Return:</span>
-                    <span className="text-emerald-400 font-semibold">+$85.00 / execution</span>
+                    <span>Circulated Qty:</span>
+                    <span className="text-white">50,000 EOC</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
-                    <span>Execution Fee:</span>
-                    <span className="text-slate-300">12 drops (0.000012 XRP)</span>
+                    <span>Profit Stored In:</span>
+                    <span className="text-cyan-300 font-bold">Native XRP (100%)</span>
                   </div>
                 </div>
               </div>
 
               <button
-                onClick={() => handleTriggerStrategy('DEX_ARBITRAGE', 'EOC/XRP')}
+                onClick={() => handleTriggerStrategy('EOC_CIRCULATION')}
                 disabled={isDispatching}
-                className="mt-6 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-sm transition shadow-lg shadow-cyan-950/50 disabled:opacity-50"
+                className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold text-xs transition shadow-lg shadow-purple-950/50 disabled:opacity-50"
               >
                 <QrCode className="w-4 h-4" />
-                <span>Launch Spread Order via Xaman</span>
+                <span>Circulate EOC via Xaman</span>
               </button>
             </div>
 
-            {/* Strategy Card 2 */}
-            <div className="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-purple-700/40 hover:border-purple-400/60 transition shadow-xl flex flex-col justify-between">
-              <div className="space-y-4">
+            {/* Strategy Card 2: EOC / XRP AMM Yield */}
+            <div className="p-5 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-cyan-700/40 hover:border-cyan-400/60 transition shadow-xl flex flex-col justify-between">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-1 rounded-md bg-purple-950 border border-purple-600/40 text-purple-300 text-xs font-mono">
-                    XLS-30 Native AMM
+                  <span className="px-2 py-0.5 rounded-md bg-cyan-950 border border-cyan-600/40 text-cyan-300 text-[11px] font-mono font-bold">
+                    XLS-30 AMM POOL
                   </span>
-                  <span className="text-purple-400 text-xs font-semibold">14.2% APY Yield</span>
+                  <span className="text-cyan-400 text-xs font-semibold">16.8% APR Target</span>
                 </div>
 
-                <div className="space-y-1.5">
-                  <h3 className="text-lg font-bold text-white">EOC / RLUSD Liquidity Yield</h3>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-white">EOC / XRP AMM Pool Seed</h3>
                   <p className="text-slate-300 text-xs leading-relaxed">
-                    Deposits 50,000 sovereign EOC tokens into the on-chain XRPL XLS-30 automated market maker pool to harvest continuous LP swap fee distributions.
+                    Deposits into verified AMM pool (r4jLfS...FN26) with 10.18B EOC depth. Liquidity facilitates instant global swaps, harvesting fee yield in XRP.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1 text-xs font-mono">
+                <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1 text-xs font-mono">
                   <div className="flex justify-between text-slate-400">
-                    <span>Transaction Type:</span>
-                    <span className="text-purple-300">AMMDeposit</span>
+                    <span>Pool Account:</span>
+                    <span className="text-cyan-300 truncate max-w-[120px]">r4jLfSSKK1GG7b...</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
-                    <span>Target Return:</span>
-                    <span className="text-emerald-400 font-semibold">14.2% APY Continuous</span>
+                    <span>AMM Trading Fee:</span>
+                    <span className="text-emerald-400 font-semibold">0.500% / swap</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
-                    <span>Collateral Backing:</span>
-                    <span className="text-slate-300">43.8B EOC Pool Vault</span>
+                    <span>Fee Yield Asset:</span>
+                    <span className="text-cyan-300 font-bold">Native XRP</span>
                   </div>
                 </div>
               </div>
@@ -529,42 +584,85 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
               <button
                 onClick={() => handleTriggerStrategy('AMM_YIELD')}
                 disabled={isDispatching}
-                className="mt-6 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-sm transition shadow-lg shadow-purple-950/50 disabled:opacity-50"
+                className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-xs transition shadow-lg shadow-cyan-950/50 disabled:opacity-50"
               >
                 <TrendingUp className="w-4 h-4" />
-                <span>Deposit Liquidity via Xaman</span>
+                <span>Seed AMM via Xaman</span>
               </button>
             </div>
 
-            {/* Strategy Card 3 */}
-            <div className="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-amber-700/40 hover:border-amber-400/60 transition shadow-xl flex flex-col justify-between">
-              <div className="space-y-4">
+            {/* Strategy Card 3: Multi-Token Profit Sweep to XRP */}
+            <div className="p-5 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-emerald-700/40 hover:border-emerald-400/60 transition shadow-xl flex flex-col justify-between">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-1 rounded-md bg-amber-950 border border-amber-600/40 text-amber-300 text-xs font-mono">
-                    Owner Reserve Reclaim
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-950 border border-emerald-600/40 text-emerald-300 text-[11px] font-mono font-bold">
+                    PROFIT AUTO-SWEEP
                   </span>
-                  <span className="text-amber-400 text-xs font-semibold">Instant Capital Release</span>
+                  <span className="text-emerald-400 text-xs font-bold font-mono">Auto-Store XRP</span>
                 </div>
 
-                <div className="space-y-1.5">
-                  <h3 className="text-lg font-bold text-white">Reclaim 0.60 XRP Locked Capital</h3>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-white">Sweep Tokens to XRP</h3>
                   <p className="text-slate-300 text-xs leading-relaxed">
-                    Identified 3 zero-balance dormant trustlines holding 0.20 XRP reserve each. Submits TrustSet limit 0 transactions to immediately return 0.60 XRP to free balance.
+                    Executes verified pathfinding swaps for held tokens (APL, LOAN, XRPALPHA) through their native AMM pools, converting 100% of realized value to XRP.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1 text-xs font-mono">
+                <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1 text-xs font-mono">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Route Engine:</span>
+                    <span className="text-emerald-300">ripple_path_find</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Verified Pairs:</span>
+                    <span className="text-white">APL, LOAN, XRPALPHA</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Output Storage:</span>
+                    <span className="text-cyan-300 font-bold">Native XRP Wallet</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleTriggerStrategy('TOKEN_SWEEP')}
+                disabled={isDispatching}
+                className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs transition shadow-lg shadow-emerald-950/50 disabled:opacity-50"
+              >
+                <Zap className="w-4 h-4" />
+                <span>Sweep to XRP via Xaman</span>
+              </button>
+            </div>
+
+            {/* Strategy Card 4: Owner Reserve Reclaim */}
+            <div className="p-5 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-amber-700/40 hover:border-amber-400/60 transition shadow-xl flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2 py-0.5 rounded-md bg-amber-950 border border-amber-600/40 text-amber-300 text-[11px] font-mono font-bold">
+                    RESERVE HARVEST
+                  </span>
+                  <span className="text-amber-400 text-xs font-bold font-mono">+0.60 XRP Instant</span>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-white">Reclaim 0.60 Locked XRP</h3>
+                  <p className="text-slate-300 text-xs leading-relaxed">
+                    Closes 3 zero-balance dormant trustlines holding 0.20 XRP reserve each. Automatically credits 0.60 XRP directly into your spendable balance.
+                  </p>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1 text-xs font-mono">
                   <div className="flex justify-between text-slate-400">
                     <span>Transaction Type:</span>
                     <span className="text-amber-300">TrustSet (Limit: 0)</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
-                    <span>Instant XRP Unlocked:</span>
+                    <span>Net XRP Unlocked:</span>
                     <span className="text-emerald-400 font-semibold">+0.60 XRP (~$1.60)</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
-                    <span>New Gas Capacity:</span>
-                    <span className="text-slate-300">+50,000 Transactions</span>
+                    <span>Added Gas Capacity:</span>
+                    <span className="text-slate-300">+50,000 Txns</span>
                   </div>
                 </div>
               </div>
@@ -572,9 +670,9 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
               <button
                 onClick={() => handleTriggerStrategy('RESERVE_HARVEST')}
                 disabled={isDispatching}
-                className="mt-6 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-semibold text-sm transition shadow-lg shadow-amber-950/50 disabled:opacity-50"
+                className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-semibold text-xs transition shadow-lg shadow-amber-950/50 disabled:opacity-50"
               >
-                <Sparkles className="w-4 h-4" />
+                <Coins className="w-4 h-4" />
                 <span>Reclaim 0.60 XRP via Xaman</span>
               </button>
             </div>

@@ -291,24 +291,31 @@ export const PortfolioGrowthPlanSuite: React.FC<PortfolioGrowthPlanSuiteProps> =
     if (onNotify) onNotify(`Copied to clipboard: ${text.slice(0, 24)}...`, 'INFO');
   };
 
-  // Ping Credential test
-  const testCredentialConnection = (cred: TradingCredential) => {
+  // Ping Credential test against live orchestrator probe
+  const testCredentialConnection = async (cred: TradingCredential) => {
     setTestingCredId(cred.id);
-    setTimeout(() => {
-      const simulatedLatency = Math.floor(Math.random() * 18) + 6;
+    const t0 = Date.now();
+    try {
+      const res = await fetch('/api/orchestrator/status');
+      const measuredLatency = Date.now() - t0;
       const updatedCred: TradingCredential = {
         ...cred,
-        latencyMs: simulatedLatency,
-        lastTestedAt: `Just now (HTTP 200 OK · ${simulatedLatency}ms)`
+        latencyMs: measuredLatency,
+        lastTestedAt: res.ok ? `Verified (HTTP ${res.status} · ${measuredLatency}ms)` : `Probe HTTP ${res.status}`
       };
       const updatedList = tradingCredentials.map(c => c.id === cred.id ? updatedCred : c);
       setTradingCredentials(updatedList);
       saveTradingCredential(updatedCred);
-      setTestingCredId(null);
       if (onNotify) {
-        onNotify(`Connection Verified: ${cred.name} (${simulatedLatency}ms latency)`, 'SUCCESS');
+        onNotify(`Connection Probed: ${cred.name} (${measuredLatency}ms latency)`, res.ok ? 'SUCCESS' : 'WARN');
       }
-    }, 900);
+    } catch (err: any) {
+      if (onNotify) {
+        onNotify(`Connection probe failed for ${cred.name}: ${err?.message || err}`, 'WARN');
+      }
+    } finally {
+      setTestingCredId(null);
+    }
   };
 
   // Test CyberGym Credential Attestation
@@ -404,7 +411,7 @@ export const PortfolioGrowthPlanSuite: React.FC<PortfolioGrowthPlanSuiteProps> =
       })),
       cyberGymCredentialsVault: cyberGymCredentials,
       exportedAt: new Date().toISOString(),
-      sovereignHash: '0x' + Math.random().toString(16).substring(2, 18) + Math.random().toString(16).substring(2, 18),
+      exportEpochMs: Date.now(),
       systemVersion: 'Aegentix-v4.8-Sovereign-Engine'
     };
 

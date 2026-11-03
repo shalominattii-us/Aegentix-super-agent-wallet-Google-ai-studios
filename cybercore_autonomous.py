@@ -10,16 +10,19 @@ Executes a proactive, self-triggering alpha-generation loop every 60 seconds:
 
 import asyncio
 import json
+import os
 import time
 import urllib.request
 import urllib.error
 from lib.market_research import MarketResearcher
 from security.agent_security_engine import SecurityEngine
 
-HERETIC_URL = "http://localhost:9003/generate"
-COMPLIANCE_URL = "http://localhost:9004/gate/verify"
-TELEMETRY_URL = "http://localhost:9006/telemetry/push"
-WEB_UI_TELEMETRY_URL = "http://localhost:3000/api/telemetry"
+HERETIC_URL = "http://127.0.0.1:9003/generate"
+COMPLIANCE_URL = "http://127.0.0.1:9004/gate/verify"
+TELEMETRY_URL = "http://127.0.0.1:9006/telemetry/push"
+WEB_UI_TELEMETRY_URL = "http://127.0.0.1:3000/api/telemetry"
+_GATE_KEY_PATH = os.path.join(os.path.expanduser("~"), ".aegentix-dev-keys", "gate_api.key")
+GATE_API_KEY = (os.environ.get("AEGENTIX_GATE_API_KEY") or (open(_GATE_KEY_PATH).read().strip() if os.path.exists(_GATE_KEY_PATH) else "")).strip()
 
 
 class AutonomousCyberCore:
@@ -31,13 +34,16 @@ class AutonomousCyberCore:
         self.pulse_counter = 0
         self.total_alpha_usd = 0.0
 
-    async def _post_json(self, url: str, data: dict, timeout: float = 2.0) -> dict:
+    async def _post_json(self, url: str, data: dict, timeout: float = 2.0, extra_headers: dict = None) -> dict:
         """Helper to post JSON using standard urllib to avoid mandatory third-party pip packages."""
         def _sync_req():
+            headers = {"Content-Type": "application/json"}
+            if extra_headers:
+                headers.update(extra_headers)
             req = urllib.request.Request(
                 url,
                 data=json.dumps(data).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
+                headers=headers,
                 method="POST",
             )
             try:
@@ -133,37 +139,44 @@ class AutonomousCyberCore:
                             "reason": "Behavioral anomaly detected",
                         })
                     else:
-                        # Remote gate verification on Port 9004
-                        gate_resp = await self._post_json(COMPLIANCE_URL, {
-                            "signal": signal_text,
-                            "actor_id": self.actor_id,
-                            "market_data": market_context,
-                        })
+                        # Remote gate verification on Port 9004 (Fail-Closed: never bypass on error or rejection)
+                        gate_resp = await self._post_json(
+                            COMPLIANCE_URL,
+                            {
+                                "signal": signal_text,
+                                "actor_id": self.actor_id,
+                                "market_data": market_context,
+                            },
+                            extra_headers={"X-API-Key": GATE_API_KEY} if GATE_API_KEY else {},
+                        )
 
-                        if gate_resp.get("error"):
-                            # Local gate sign-off fallback
-                            gate_block = self.security.sign_gate_block(self.actor_id, "AUTONOMOUS_EXECUTION", {"signal": signal_text})
-                        else:
-                            gate_block = gate_resp.get("block", {})
+                        if gate_resp.get("error") or not gate_resp.get("gate_approved"):
+                            reason = gate_resp.get("reason") or gate_resp.get("error") or "Compliance Gate rejected or unreachable (fail-closed)"
+                            print(f"[!] GATE FAIL-CLOSED: {reason}")
+                            await self.broadcast_telemetry({
+                                "stage": "GATE_BLOCKED",
+                                "pulse": self.pulse_counter,
+                                "reason": reason,
+                            })
+                            continue
 
+                        gate_block = gate_resp.get("block", {})
                         print(f"    -> Gate PASSED. Chained Block #{gate_block.get('height')}: {gate_block.get('hash', '')[:24]}...")
 
                         # -------------------------------------------------------------
-                        # 4. ACT & BROADCAST: Route execution to DEX/CEX
+                        # 4. ACT & BROADCAST: Stage proposal only (never fabricate live alpha)
                         # -------------------------------------------------------------
-                        net_alpha = round(spread * 34.5, 2)
-                        self.total_alpha_usd += net_alpha
-                        print(f"[4. ACT] Executing atomic dual-exchange trade. Net Alpha: +${net_alpha} USD.")
+                        print(f"[4. ACT] Signal approved by Compliance Gate (#{gate_block.get('height')}); live execution requires hardware signing bridge (:8081).")
 
                         await self.broadcast_telemetry({
-                            "stage": "ACT",
+                            "stage": "ACT_PROPOSAL_STAGED",
                             "pulse": self.pulse_counter,
-                            "action": "EXECUTE_ARBITRAGE",
+                            "action": "STAGE_ARBITRAGE_PROPOSAL",
                             "pair": "ETH/USDT",
-                            "alpha_usd": net_alpha,
+                            "alpha_usd": 0.0,
                             "total_alpha_usd": round(self.total_alpha_usd, 2),
                             "compliance_hash": gate_block.get("hash", ""),
-                            "message": f"Autonomous alpha executed: +${net_alpha} USD. Signed Block #{gate_block.get('height')}.",
+                            "message": f"Signal approved by Compliance Gate (Block #{gate_block.get('height')}); awaiting live signing bridge (:8081).",
                         })
                 else:
                     print("[*] No trade threshold met. Preserving capital in reserve.")

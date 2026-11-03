@@ -247,7 +247,7 @@ PHOENIX_LOOP: RESPAWNED_DEFENDER_CORE_ACTIVE`,
     if (onNotify) onNotify(`⚡ Running CyberGym Drill [${activeDrill.id}] with Athlete: ${selectedAthlete}...`, 'INFO');
 
     try {
-      const res = await fetch('/api/cybergym/drill/run', {
+      const res = await fetch('/api/cybergym/drill/run?drill=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

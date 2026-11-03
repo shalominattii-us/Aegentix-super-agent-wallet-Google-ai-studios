@@ -207,7 +207,7 @@ export const AntiTraffickingSentinelSuite: React.FC<AntiTraffickingSentinelSuite
   const handleExecuteTripwireSimulation = async () => {
     setIsTripwiring(true);
     try {
-      const response = await fetch('/api/anti-trafficking/simulate-tripwire', {
+      const response = await fetch('/api/anti-trafficking/simulate-tripwire?drill=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

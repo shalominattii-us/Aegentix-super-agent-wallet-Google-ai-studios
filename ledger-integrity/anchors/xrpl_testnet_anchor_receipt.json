@@ -1,0 +1,51 @@
+{
+  "ok": true,
+  "network": "XRPL_TESTNET",
+  "rpcEndpoint": "wss://s.altnet.rippletest.net:51233",
+  "account": "rL4DMkCEWMcyMSN6dFRFeM7zCgYLsXtKLj",
+  "txHash": "42BFC59823711FBEB4E0BF9A0F1B8EB7954B3079D9178D2EF6263514E3302A0B",
+  "ledgerIndex": 21938312,
+  "transactionResult": "tesSUCCESS",
+  "memoType": "aegentix/quorum-cert",
+  "onChainMemoFields": {
+    "certHash": "758884f65de35c052d8aed8dc7a7654e49ce084c4b8d44d721c420ee44df7e3b",
+    "checkpointIndex": 2,
+    "prevCheckpointHash": "fd4260281b84900c308e297f417028c25174f27d5d6585be4d087c7b9688c657"
+  },
+  "omegaOriginHash": "2f3b077bd4c0667e70dbede7ba30b5760c9abea06ea1f5cfaa5adcf2ab3fb344",
+  "checkpoint": {
+    "index": 2,
+    "hash": "da77b921952a7c1e68432260bd940150840361f6cd4ee1f460ab317e1edb832e",
+    "prev": "fd4260281b84900c308e297f417028c25174f27d5d6585be4d087c7b9688c657",
+    "merkleRoot": "89905dfa1e9cb9a70056d538360c9590bb0fdc3f4e2fa2a2a9d772b7cc74f0c4",
+    "entries": 5
+  },
+  "quorumCertificate": {
+    "certHash": "758884f65de35c052d8aed8dc7a7654e49ce084c4b8d44d721c420ee44df7e3b",
+    "subject": "da77b921952a7c1e68432260bd940150840361f6cd4ee1f460ab317e1edb832e",
+    "profile": "ed25519",
+    "threshold": "4-of-7",
+    "signers": [
+      "signer-1",
+      "signer-2",
+      "signer-3",
+      "signer-4"
+    ]
+  },
+  "verifications": {
+    "omegaVerify": {
+      "ok": true,
+      "problems": [],
+      "checkpoints": 2,
+      "originHash": "2f3b077bd4c0667e70dbede7ba30b5760c9abea06ea1f5cfaa5adcf2ab3fb344"
+    },
+    "quorumVerify": {
+      "ok": true,
+      "good": 4,
+      "threshold": 4,
+      "total": 7
+    },
+    "onChainRoundTripMatch": true
+  },
+  "verifiedAt": "2026-10-30T12:57:11.319Z"
+}

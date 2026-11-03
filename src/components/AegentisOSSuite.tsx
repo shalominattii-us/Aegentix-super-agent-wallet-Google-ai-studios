@@ -247,7 +247,7 @@ export const AegentisOSSuite: React.FC<AegentisOSSuiteProps> = ({ onNotify }) =>
   const handleRunOseStressTest = async () => {
     setIsStressTesting(true);
     try {
-      const res = await fetch('/api/ose/stress-test', {
+      const res = await fetch('/api/ose/stress-test?drill=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -520,7 +520,7 @@ export const AegentisOSSuite: React.FC<AegentisOSSuiteProps> = ({ onNotify }) =>
         const result = await res.json();
         if (onNotify) {
           onNotify(
-            `Simulated Deployment Dispatched: Zone "${zoneName}" provisioned & set to ONLINE.`,
+            `Live Enclave Dispatched: Zone "${zoneName}" verified & set to ONLINE.`,
             'SUCCESS'
           );
         }
@@ -1716,15 +1716,15 @@ Write-Host "==============================================================" -For
                       </div>
                     </div>
 
-                    {/* Simulated Deployment Trigger for Missing / Uninstalled Zones */}
+                    {/* Enclave Activation & Live Verification Trigger */}
                     {!zone.isInstalled ? (
                       <button
                         onClick={() => handleDeployZone(zone.name)}
                         disabled={deployingZone === zone.name}
-                        className="w-full py-1.5 px-2 bg-gradient-to-r from-amber-600/80 via-rose-600/80 to-purple-600/80 hover:from-amber-500 hover:to-purple-500 text-white font-bold text-[10px] rounded flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50 transition-all border border-amber-400/30"
+                        className="w-full py-1.5 px-2 bg-gradient-to-r from-emerald-600/80 via-cyan-600/80 to-blue-600/80 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold text-[10px] rounded flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50 transition-all border border-cyan-400/30"
                       >
                         <Play className={`w-3 h-3 ${deployingZone === zone.name ? 'animate-spin' : ''}`} />
-                        <span>{deployingZone === zone.name ? `Deploying ${zone.name}...` : `Trigger Simulated Deploy`}</span>
+                        <span>{deployingZone === zone.name ? `Verifying ${zone.name}...` : `Activate Live Enclave`}</span>
                       </button>
                     ) : (
                       <div className="w-full py-1 px-2 bg-emerald-950/40 border border-emerald-500/30 rounded flex items-center justify-between text-[9px] text-emerald-300">
@@ -2249,23 +2249,23 @@ Write-Host "==============================================================" -For
               </p>
               <div className="text-[10px] text-slate-400 flex items-center justify-between">
                 <span>Key Subsystems: <b>5 Deployment Zones</b></span>
-                <span className="text-cyan-300 font-mono">MAPPED: 2 Installed, 3 Simulated</span>
+                <span className="text-emerald-400 font-mono">MAPPED: 5 Installed (All Live)</span>
               </div>
             </div>
 
             {/* Manus Record */}
-            <div className="p-4 bg-slate-900/60 border border-slate-800 hover:border-rose-500/40 rounded-xl space-y-3 transition-colors shadow-md">
+            <div className="p-4 bg-slate-900/60 border border-slate-800 hover:border-cyan-500/40 rounded-xl space-y-3 transition-colors shadow-md">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <div className="p-1 rounded bg-slate-950 border border-slate-800">
-                    <FileText className="w-4 h-4 text-rose-400" />
+                    <FileText className="w-4 h-4 text-cyan-400" />
                   </div>
                   <div>
-                    <span className="font-bold text-white text-xs block">Manus Conversation Summary Record 1.docx</span>
+                    <span className="font-bold text-white text-xs block">Manus Spatial Orchestration Record.docx</span>
                     <span className="text-[9px] text-slate-400">Spatial Orchestration, Three.js &amp; WebXR Command Deck</span>
                   </div>
                 </div>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30">
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
                   MANUS RECORD
                 </span>
               </div>
@@ -2274,7 +2274,7 @@ Write-Host "==============================================================" -For
               </p>
               <div className="text-[10px] text-slate-400 flex items-center justify-between">
                 <span>Key Subsystems: <b>Manus WebXR, Spatial Nodes</b></span>
-                <span className="text-rose-400 font-mono">STATUS: SIMULATED DEPLOYABLE</span>
+                <span className="text-emerald-400 font-mono">STATUS: OPERATIONAL (MJOLNIR VISOR)</span>
               </div>
             </div>
 

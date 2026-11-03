@@ -38,12 +38,12 @@ interface HeaderProps {
   isExpandedCanvas?: boolean;
   onToggleExpandedCanvas?: () => void;
   onOpenDeviceMapping?: () => void;
-  onOpenSpaceBunny?: () => void;
   onOpenLounge?: () => void;
   onOpenMedical?: () => void;
   onOpenPinnacle?: () => void;
   onOpenLedger?: () => void;
   onOpenTrading?: () => void;
+  onOpenJarvis?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -62,12 +62,12 @@ export const Header: React.FC<HeaderProps> = ({
   isExpandedCanvas,
   onToggleExpandedCanvas,
   onOpenDeviceMapping,
-  onOpenSpaceBunny,
   onOpenLounge,
   onOpenMedical,
   onOpenPinnacle,
   onOpenLedger,
   onOpenTrading,
+  onOpenJarvis,
 }) => {
   const [isAppsDropdownOpen, setIsAppsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -123,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Zone 3: Actions & Controls - Tightly Framed & Non-Overflowing */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 justify-end">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink justify-end">
           {/* Modular Auth Indicator */}
           <AuthIndicator />
 
@@ -141,15 +141,39 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="whitespace-nowrap">{isAutopilot ? 'AUTOPILOT ON' : 'STANDBY'}</span>
           </button>
 
+          {/* JARVIS Tactical HUD & Studio Direct Access (Visible on wide screens; accessible in Apps menu for compact displays) */}
+          <a
+            href="/jarvis"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden 2xl:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-cyan-600/30 to-blue-600/30 hover:from-cyan-500/40 hover:to-blue-500/40 text-cyan-200 border border-cyan-400/50 rounded text-xs font-mono font-bold transition-all shrink-0 cursor-pointer shadow-sm shadow-cyan-500/30"
+            title="Open J.A.R.V.I.S. Mark-LV Tactical Voice HUD (Fullscreen)"
+          >
+            <span>🛡️</span>
+            <span>JARVIS HUD</span>
+          </a>
+
+          {/* Apollo Voice (:8765) Direct Access (Visible on wide screens; accessible in Apps menu for compact displays) */}
+          <a
+            href="http://localhost:8765"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden 2xl:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-amber-600/30 to-yellow-600/30 hover:from-amber-500/40 hover:to-yellow-500/40 text-amber-200 border border-amber-400/50 rounded text-xs font-mono font-bold transition-all shrink-0 cursor-pointer shadow-sm shadow-amber-500/30"
+            title="Open Hermes Apollo Voice OS (:8765) with Authentic Charlie Kirk"
+          >
+            <span>🎙️</span>
+            <span>Apollo Voice (:8765)</span>
+          </a>
+
           {/* Table of Contents Modal */}
           {onOpenTocModal && (
             <button
               onClick={onOpenTocModal}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 hover:from-cyan-500/30 hover:to-indigo-500/30 text-cyan-300 border border-cyan-500/40 rounded text-xs font-mono font-medium transition-all cursor-pointer"
+              className="hidden lg:flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 hover:from-cyan-500/30 hover:to-indigo-500/30 text-cyan-300 border border-cyan-500/40 rounded text-xs font-mono font-medium transition-all cursor-pointer"
               title="Open 34 Subsystems Table of Contents"
             >
               <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden md:inline">Index</span>
+              <span>Index</span>
             </button>
           )}
 
@@ -157,11 +181,11 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenExportModal && (
             <button
               onClick={onOpenExportModal}
-              className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-emerald-300 border border-emerald-500/40 rounded text-xs font-mono font-medium transition-all cursor-pointer"
+              className="hidden xl:flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-emerald-300 border border-emerald-500/40 rounded text-xs font-mono font-medium transition-all cursor-pointer"
               title="Export Full Codebase"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden lg:inline">Export</span>
+              <span>Export</span>
             </button>
           )}
 
@@ -169,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
           {onToggleExpandedCanvas && (
             <button
               onClick={onToggleExpandedCanvas}
-              className={`hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-mono font-medium transition-all border cursor-pointer ${
+              className={`hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-mono font-medium transition-all border cursor-pointer ${
                 isExpandedCanvas
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold'
                   : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60'
@@ -179,12 +203,12 @@ export const Header: React.FC<HeaderProps> = ({
               {isExpandedCanvas ? (
                 <>
                   <Minimize2 className="w-3.5 h-3.5 text-cyan-400" />
-                  <span className="hidden lg:inline">Triage</span>
+                  <span>Triage</span>
                 </>
               ) : (
                 <>
                   <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="hidden lg:inline">Focus</span>
+                  <span>Focus</span>
                 </>
               )}
             </button>
@@ -194,14 +218,14 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onTriggerStressTest}
             disabled={isStressTesting}
-            className="hidden sm:flex items-center gap-1 px-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-xs font-mono transition-colors disabled:opacity-50 cursor-pointer"
+            className="hidden xl:flex items-center gap-1 px-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-xs font-mono transition-colors disabled:opacity-50 cursor-pointer"
             title="Simulate sudden market crash to test autonomous circuit breakers"
           >
             <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-            <span className="hidden xl:inline">{isStressTesting ? 'Sim...' : 'Stress'}</span>
+            <span>{isStressTesting ? 'Sim...' : 'Stress'}</span>
           </button>
 
-          {/* Quick Apps Menu Dropdown - Consolidates all 7 secondary apps without exploding header width */}
+          {/* Quick Apps Menu Dropdown - Consolidates all ecosystem apps without exploding header width */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsAppsDropdownOpen(!isAppsDropdownOpen)}
@@ -219,6 +243,49 @@ export const Header: React.FC<HeaderProps> = ({
                   Ecosystem Quick Launch
                 </div>
 
+                {/* JARVIS Quick Launch */}
+                {onOpenJarvis && (
+                  <button
+                    onClick={() => { onOpenJarvis(); setIsAppsDropdownOpen(false); }}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-cyan-300 hover:text-white hover:bg-cyan-950/60 transition-colors text-left cursor-pointer border border-cyan-500/20"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>🤖</span>
+                      <span>JARVIS Studio</span>
+                    </span>
+                    <span className="text-[9px] px-1 bg-cyan-500/20 text-cyan-400 rounded">Studio</span>
+                  </button>
+                )}
+
+                <a
+                  href="/jarvis"
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setIsAppsDropdownOpen(false)}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-cyan-200 hover:text-white hover:bg-cyan-900/40 transition-colors text-left cursor-pointer border border-cyan-500/20"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>🛡️</span>
+                    <span>JARVIS Tactical Voice HUD</span>
+                  </span>
+                  <span className="text-[9px] px-1 bg-emerald-500/20 text-emerald-400 rounded">Voice HUD</span>
+                </a>
+
+                {/* Apollo Voice (:8765) */}
+                <a
+                  href="http://localhost:8765"
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setIsAppsDropdownOpen(false)}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-amber-200 hover:text-white hover:bg-amber-900/40 transition-colors text-left cursor-pointer border border-amber-500/20"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>🎙️</span>
+                    <span>Apollo Voice OS (:8765)</span>
+                  </span>
+                  <span className="text-[9px] px-1 bg-amber-500/20 text-amber-400 rounded">Voice</span>
+                </a>
+
                 {onOpenLounge && (
                   <button
                     onClick={() => { onOpenLounge(); setIsAppsDropdownOpen(false); }}
@@ -232,18 +299,6 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 )}
 
-                {onOpenSpaceBunny && (
-                  <button
-                    onClick={() => { onOpenSpaceBunny(); setIsAppsDropdownOpen(false); }}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span>🐰</span>
-                      <span>Space Bunny Stealth Chat</span>
-                    </span>
-                    <span className="text-[9px] px-1 bg-fuchsia-500/20 text-fuchsia-400 rounded">AI</span>
-                  </button>
-                )}
 
                 {onOpenDeviceMapping && (
                   <button

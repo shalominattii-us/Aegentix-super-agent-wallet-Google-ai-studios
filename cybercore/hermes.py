@@ -405,7 +405,16 @@ async def main():
     from cybercore.vault import create_vault, VaultConfig
     from cybercore.entropy import Argon2Provider, get_global_registry
     
-    provider = Argon2Provider(passphrase="cybercore-master-seed-2024", country_code="US")
+    key_file = os.path.join(os.path.expanduser("~"), ".aegentix-dev-keys", "sovereign_hmac.key")
+    passphrase = (
+        os.getenv("CYBERCORE_MASTER_PASSPHRASE")
+        or os.getenv("AEGENTIX_SOVEREIGN_HMAC_KEY")
+        or (open(key_file).read().strip() if os.path.exists(key_file) else "")
+    ).strip()
+    if not passphrase or len(passphrase) < 32:
+        raise RuntimeError(f"CRITICAL: Missing master passphrase in CYBERCORE_MASTER_PASSPHRASE or {key_file}")
+
+    provider = Argon2Provider(passphrase=passphrase, country_code="US")
     registry = get_global_registry()
     registry.register(provider)
     

@@ -117,7 +117,7 @@ export const AutoHedgeSuite: React.FC<AutoHedgeSuiteProps> = ({ onNotify }) => {
   const handleRunSwarmCycle = async () => {
     setIsCycling(true);
     try {
-      const res = await fetch('/api/autohedge/cycle', {
+      const res = await fetch('/api/autohedge/cycle?drill=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ strategy: selectedStrategy }),

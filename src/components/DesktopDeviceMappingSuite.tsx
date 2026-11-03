@@ -417,7 +417,7 @@ export const DesktopDeviceMappingSuite: React.FC<DesktopDeviceMappingSuiteProps>
             { label: 'sov fix', cmd: 'sov fix' },
             { label: 'sov start', cmd: 'sov start' },
             { label: 'hermes reset', cmd: 'curl -X POST /api/hermes/reset' },
-            { label: 'spacebunny test', cmd: 'sov spacebunny test' },
+            { label: 'antigravity test', cmd: 'curl -X POST /api/agent/antigravity/deliberate' },
           ].map((item, idx) => (
             <button
               key={idx}

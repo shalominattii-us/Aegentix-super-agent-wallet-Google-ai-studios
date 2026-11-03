@@ -605,7 +605,7 @@ export const AegisCipherProtocolView: React.FC<AegisCipherProtocolViewProps> = (
             <button
               onClick={async () => {
                 try {
-                  const res = await fetch('/api/cybergym/run-athlete-loop', {
+                  const res = await fetch('/api/cybergym/run-athlete-loop?drill=true', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ symbol: 'SOL/USDC', tradeSizeUsd: 15000 }),
@@ -737,7 +737,7 @@ export const AegisCipherProtocolView: React.FC<AegisCipherProtocolViewProps> = (
               onClick={async () => {
                 setIsSimulating(true);
                 try {
-                  const res = await fetch('/api/cybergym/redteam/simulate', {
+                  const res = await fetch('/api/cybergym/redteam/simulate?drill=true', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

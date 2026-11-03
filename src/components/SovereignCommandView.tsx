@@ -261,6 +261,17 @@ export const SovereignCommandView: React.FC<SovereignCommandViewProps> = ({ onNo
             <span>Launch Standalone HTML</span>
           </a>
 
+          <a
+            href="/avatar-hud"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600/30 via-emerald-600/30 to-blue-600/30 hover:from-cyan-500 hover:to-emerald-500 text-cyan-200 hover:text-slate-950 border border-cyan-400/40 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md"
+            title="Open Aegentix Sovereign Avatar HUD & Infinite Graphics Forge"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
+            <span>Avatar HUD &amp; CyberSurf Forge</span>
+          </a>
+
           <button
             onClick={() => {
               setSelectedTier(SOVEREIGN_ACQUISITION_TIERS[1]);

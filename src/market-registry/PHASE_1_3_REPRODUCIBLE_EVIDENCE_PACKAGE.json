@@ -1,0 +1,143 @@
+{
+  "title": "AEGENTIX Phase 1.3 Reproducible Evidence Package",
+  "generated_at": "2026-10-31T23:01:00.000Z",
+  "provenance_and_commits": {
+    "code_under_test_commit": "53ed7a718b958c273898c634b07cf354adff1875",
+    "audit_record_commit": "991e5828ecf4e4215f7959074ee29eb9cb176461",
+    "secondary_repository_commit": "ee7493d56b001a1822c608f1f7dc48bf2efec423",
+    "clean_working_trees": true
+  },
+  "source_by_source_evidence_classification": {
+    "coinbase:BTC-USD:spot": {
+      "market_structure": "CLOB",
+      "evidence_origin": "LOCAL_FIXTURE",
+      "is_live_api": false,
+      "source_type": "Simulated multi-level orderbook fixture",
+      "statutory_basis": "Coinbase, Inc. NYDFS BitLicense (2017-01-17)"
+    },
+    "kraken:BTC-USD:spot": {
+      "market_structure": "CLOB",
+      "evidence_origin": "LOCAL_FIXTURE",
+      "is_live_api": false,
+      "source_type": "Simulated multi-level orderbook fixture",
+      "statutory_basis": "Payward Interactive, Inc. FinCEN MSB / State MTLs (2014-04-10)"
+    },
+    "bitstamp:BTC-USD:spot": {
+      "market_structure": "CLOB",
+      "evidence_origin": "LOCAL_FIXTURE",
+      "is_live_api": false,
+      "source_type": "Simulated multi-level orderbook fixture",
+      "statutory_basis": "Bitstamp USA, Inc. NYDFS BitLicense / Token Greenlist (2019-04-09)"
+    },
+    "binance_us:BTC-USDT:spot": {
+      "market_structure": "CLOB",
+      "evidence_origin": "LOCAL_FIXTURE",
+      "is_live_api": false,
+      "source_type": "Simulated multi-level orderbook fixture with USDT spread",
+      "statutory_basis": "BAM Trading Services Inc. FinCEN MSB (2019-09-18)"
+    },
+    "gemini:BTC-USD:spot": {
+      "market_structure": "CLOB",
+      "evidence_origin": "LOCAL_FIXTURE",
+      "is_live_api": false,
+      "source_type": "Simulated multi-level orderbook fixture",
+      "statutory_basis": "Gemini Trust Company, LLC NYDFS Trust Charter (2015-10-02)"
+    },
+    "cme_group:MBT-FUT-2026M11:calendar_futures": {
+      "market_structure": "CFTC_DERIVATIVE_DCM",
+      "evidence_origin": "OFFICIAL_STATIC_SOURCE",
+      "is_live_api": false,
+      "source_type": "CME Rulebook Chapter 361B Contract Specification",
+      "statutory_basis": "Chicago Mercantile Exchange Inc. CFTC DCM (1936-06-15)"
+    },
+    "robinhood_crypto:BTC-USD:broker_crypto": {
+      "market_structure": "BROKER_ROUTED",
+      "evidence_origin": "LOCAL_FIXTURE",
+      "is_live_api": false,
+      "source_type": "Simulated retail omnibus quote (PFOF / zero DMA)",
+      "statutory_basis": "Robinhood Crypto, LLC NYDFS BitLicense (2019-01-24)"
+    },
+    "uphold:UPXAU-USD:digital_ledger_entitlement": {
+      "market_structure": "CONVERSION_DESK",
+      "evidence_origin": "LOCAL_FIXTURE",
+      "is_live_api": false,
+      "source_type": "Simulated bilateral RFQ quote with Brink's bailment terms",
+      "statutory_basis": "Uphold HQ Inc. FinCEN MSB / Multi-State MTL (2015-02-18)"
+    },
+    "robinhood_financial:NVDA-USD:broker_equity": {
+      "market_structure": "BROKER_ROUTED",
+      "evidence_origin": "LOCAL_FIXTURE",
+      "is_live_api": false,
+      "source_type": "Simulated retail broker quote (PFOF / zero DMA)",
+      "statutory_basis": "Robinhood Financial LLC SEC Broker-Dealer / FINRA (2013-11-04)"
+    },
+    "uniswap_v3:USDC-WETH:amm_pool": {
+      "market_structure": "AMM_POOL",
+      "evidence_origin": "LOCAL_FIXTURE",
+      "is_live_api": false,
+      "source_type": "Simulated concentrated liquidity pool snapshot",
+      "statutory_basis": "Autonomous decentralized smart contract protocol (Ethereum Mainnet)"
+    }
+  },
+  "mathematical_reproducibility": {
+    "btc_benchmark_calculation": {
+      "benchmark_value_usd": 68451.00,
+      "method": "CLOB_SPOT_MEDIAN",
+      "step_1_filter": "Include discrete spot CLOBs only; exclude derivatives and internalized retail broker quotes",
+      "step_2_input_mid_prices": [
+        { "venue": "kraken", "mid": 68449.75 },
+        { "venue": "bitstamp", "mid": 68450.00 },
+        { "venue": "coinbase", "mid": 68451.00 },
+        { "venue": "gemini", "mid": 68451.50 },
+        { "venue": "binance_us", "mid": 68518.50 }
+      ],
+      "step_3_sorted_vector": [68449.75, 68450.00, 68451.00, 68451.50, 68518.50],
+      "step_4_median_selection": "Length is 5 (odd); index 2 is 68451.00 USD"
+    },
+    "btc_depth_aggregation_and_hhi": {
+      "total_available_bid_depth_usd": 10933900,
+      "clob_venue_shares": [
+        { "venue": "coinbase", "bid_depth_usd": 2642895, "share_pct": 26.64, "hhi_contribution": 709.69 },
+        { "venue": "kraken", "bid_depth_usd": 2553405, "share_pct": 25.74, "hhi_contribution": 662.55 },
+        { "venue": "binance_us", "bid_depth_usd": 2180600, "share_pct": 21.98, "hhi_contribution": 483.12 },
+        { "venue": "bitstamp", "bid_depth_usd": 1749000, "share_pct": 17.63, "hhi_contribution": 310.82 },
+        { "venue": "gemini", "bid_depth_usd": 794000, "share_pct": 8.00, "hhi_contribution": 64.00 }
+      ],
+      "hhi_sum": 2370.18,
+      "reported_hhi": 2371,
+      "interpretation": "Moderately concentrated liquidity (1500 < HHI < 2500). No single exchange commands a monopoly on order-book depth."
+    },
+    "cme_futures_basis_annualization": {
+      "spot_reference_price_usd": 68451.00,
+      "futures_price_usd": 69120.00,
+      "gross_basis_usd": 669.00,
+      "gross_basis_percentage": 0.0097734,
+      "gross_basis_bps": 97.7,
+      "contract_maturity_date": "2026-11-27T16:00:00Z",
+      "observation_date": "2026-10-31T23:00:00Z",
+      "days_to_expiration": 27,
+      "annualization_convention": "Basis_Pct * (365 / Days_To_Expiration)",
+      "annualized_calculation": "0.97734% * (365 / 27) = 13.21%",
+      "reported_annualized_yield_pct": 13.2,
+      "operational_realizability_caveat": "13.2% is an annualized gross price dislocation. Realized carry requires accounting for SOFR funding on spot capital, FCM margin requirements on CME Clearing, execution fees, and lack of cross-margining."
+    },
+    "disaggregated_opportunity_score": {
+      "strategy_type": "BASIS_CARRY_YIELD",
+      "gross_yield_pct": 13.2,
+      "estimated_frictions_pct": 4.2,
+      "net_realizable_yield_pct": 9.0,
+      "evidence_quality_factor": 0.90,
+      "freshness_factor": 1.0,
+      "clearing_realizability_factor": 0.65,
+      "formula": "Net_Yield * 10 * Evidence_Quality * Clearing_Realizability",
+      "composite_actionability_score": 53,
+      "previous_false_score": 100,
+      "deduction_rationale": "Score reduced from 100 to 53 to penalize operational friction, financing drag, and disjoint exchange-to-clearinghouse custody."
+    }
+  },
+  "non_execution_proof": {
+    "engine_interface": "No execute, sign, trade, or transfer methods exist on SovereignMarketIntelligenceEngine or UnifiedMarketDiscoveryEngine.",
+    "runtime_invariant": "100% of opportunity objects and feed payloads enforce execution_authorized: false.",
+    "endpoint_probe": "GET /api/market/intelligence/* endpoints are read-only and return no private key or signing oracle hooks."
+  }
+}

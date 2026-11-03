@@ -191,14 +191,14 @@ export const RiskManagementDashboard: React.FC<RiskManagementDashboardProps> = (
     return () => clearInterval(interval);
   }, []);
 
-  // Run Monte Carlo Simulation of 10% Drop
+  // Run Monte Carlo Drill of 10% Drop
   const handleSimulateMarketEvent = async (dropPct = 10) => {
     setIsSimulating(true);
     try {
-      const res = await fetch('/api/risk/simulate-market-event', {
+      const res = await fetch('/api/risk/simulate-market-event?drill=true', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dropPct, numTrials: 1000 }),
+        headers: { 'Content-Type': 'application/json', 'X-Aegentix-Drill': 'true' },
+        body: JSON.stringify({ dropPct, numTrials: 1000, drill: true }),
       });
       const json = await res.json();
       if (json.success) {

@@ -101,7 +101,7 @@ export class ApexLegendsLiveApiManager {
 
   private initWebSocketServer() {
     try {
-      this.wss = new WebSocketServer({ port: this.port });
+      this.wss = new WebSocketServer({ host: '127.0.0.1', port: this.port });
       this.wss.on('connection', (ws) => {
         this.clients.add(ws);
         this.state.connected = true;

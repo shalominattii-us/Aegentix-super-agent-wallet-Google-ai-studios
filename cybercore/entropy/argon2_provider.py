@@ -24,9 +24,16 @@ class Argon2Provider(EntropyProvider):
         
         super().__init__("Argon2id", country_code, region, entity_name)
         
-        default_pass = os.environ.get("CYBERCORE_ENTROPY_PASSPHRASE", "AEGENTIX_CYBERCORE_SOVEREIGN_QUANTUM_ENTROPY_2026")
-        self.passphrase = passphrase or default_pass
-        self.salt = salt or b"AEGENTIX_CYBERCORE_SOVEREIGN_SALT_2026"
+        key_file = os.path.join(os.path.expanduser("~"), ".aegentix-dev-keys", "sovereign_hmac.key")
+        default_pass = (
+            os.environ.get("CYBERCORE_ENTROPY_PASSPHRASE")
+            or os.environ.get("AEGENTIX_SOVEREIGN_HMAC_KEY")
+            or (open(key_file).read().strip() if os.path.exists(key_file) else "")
+        ).strip()
+        self.passphrase = (passphrase or default_pass).strip()
+        if not self.passphrase or len(self.passphrase) < 32:
+            raise RuntimeError(f"CRITICAL: Missing Argon2 entropy passphrase in CYBERCORE_ENTROPY_PASSPHRASE or {key_file}")
+        self.salt = salt or os.environ.get("CYBERCORE_ENTROPY_SALT", "AEGENTIX_CYBERCORE_SOVEREIGN_SALT_2026").encode("utf-8")
         self.time_cost = time_cost
         self.memory_cost = memory_cost
         self.parallelism = parallelism

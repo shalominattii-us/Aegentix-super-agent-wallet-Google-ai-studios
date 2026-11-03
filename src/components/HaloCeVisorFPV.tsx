@@ -40,6 +40,7 @@ import { SovereignSeal } from './SovereignSeal';
 import { CaptainsLoungeVideoRender } from './CaptainsLoungeVideoRender';
 import { CaptainsLoungeInfographicBlueprint } from './CaptainsLoungeInfographicBlueprint';
 import { HaloWebCeMultiplayerDashboard } from './HaloWebCeMultiplayerDashboard';
+import { DesktopDeepmindSuite } from './DesktopDeepmindSuite';
 
 interface ContactEntity {
   id: string;
@@ -163,7 +164,7 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
 
   // Halo CE Web Desktop Shortcut Bridge State
   const haloShortcutPath = 'C:\\Users\\eagle\\OneDrive\\Desktop\\Halo CE Web.lnk';
-  const [viewportMode, setViewportMode] = useState<'LOUNGE_RENDER' | 'BLUEPRINT_POSTER' | 'SIMULATOR' | 'EMBED_WEB' | 'MULTIPLAYER_DASHBOARD' | 'RADIO_COMMS'>('LOUNGE_RENDER');
+  const [viewportMode, setViewportMode] = useState<'LOUNGE_RENDER' | 'BLUEPRINT_POSTER' | 'SIMULATOR' | 'EMBED_WEB' | 'MULTIPLAYER_DASHBOARD' | 'RADIO_COMMS' | 'DESKTOP_DEEPMIND'>('LOUNGE_RENDER');
   const [haloWebUrl, setHaloWebUrl] = useState(() => {
     return localStorage.getItem('halo_ce_web_url') || 'http://localhost:8080';
   });
@@ -200,7 +201,7 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
   const [ttsActive, setTtsActive] = useState(true);
   const [isSpeakingAudio, setIsSpeakingAudio] = useState(false);
   const [audioBusUnlocked, setAudioBusUnlocked] = useState(false);
-  const [selectedVoiceSpeaker, setSelectedVoiceSpeaker] = useState<'CHIEF' | 'CORTANA' | 'KIRK'>('CHIEF');
+  const [selectedVoiceSpeaker, setSelectedVoiceSpeaker] = useState<'OPTIMUS_PRIME' | 'CHARLIE_KIRK' | 'TRUMP' | 'CHIEF' | 'CORTANA' | 'KIRK'>('OPTIMUS_PRIME');
   const [activeSpeechTimeout, setActiveSpeechTimeout] = useState<any>(null);
   const [commsInputText, setCommsInputText] = useState('');
   const [isCommsTransmitting, setIsCommsTransmitting] = useState(false);
@@ -210,9 +211,9 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
     callsign: string;
     timestamp: string;
   } | null>({
-    text: "Master Chief Sierra-117 standing by on frequency 8100. Tactical visor and neural comms linked. State your command, Commander.",
-    speaker: "MASTER CHIEF (SPARTAN-117)",
-    callsign: "SIERRA-117",
+    text: "Optimus Prime standing by on sovereign frequency. Megacore and Autobot swarm linked. State your command, Commander.",
+    speaker: "OPTIMUS PRIME (SOVEREIGN COMMANDER)",
+    callsign: "PRIME-01",
     timestamp: "LIVE"
   });
 
@@ -361,12 +362,12 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
 
     // 2. Set on-screen transmission HUD banner
     const isCortana = speakerName.toLowerCase().includes('cortana');
-    const isKirk = speakerName.toLowerCase().includes('kirk');
-    const callsign = isCortana ? 'CTN-0452-9' : isKirk ? 'NCC-1701' : 'SIERRA-117';
+    const isKirk = speakerName.toLowerCase().includes('kirk') || speakerName.toLowerCase().includes('charlie');
+    const callsign = isCortana ? 'CTN-0452-9' : isKirk ? 'APOLLO-01' : 'SIERRA-117';
 
     setActiveHudTransmission({
       text,
-      speaker: speakerName,
+      speaker: isKirk ? 'CHARLIE KIRK (HERMES APOLLO VOICE)' : speakerName,
       callsign,
       timestamp: new Date().toLocaleTimeString()
     });
@@ -381,41 +382,75 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
     }, fallbackDurationMs);
     setActiveSpeechTimeout(tm);
 
-    // 3. Synthesize speech via Web Speech API
-    try {
-      if ('speechSynthesis' in window) {
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
+    const fallbackSpeechSynth = () => {
+      try {
+        if ('speechSynthesis' in window) {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+          window.speechSynthesis.cancel();
+
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = isCortana ? 1.05 : isKirk ? 1.15 : 0.94;
+          utterance.pitch = isCortana ? 1.18 : isKirk ? 1.0 : 0.85;
+
+          const voices = window.speechSynthesis.getVoices();
+          const techVoice = voices.find(v =>
+            isCortana
+              ? (v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('samantha'))
+              : (v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('guy') || v.name.toLowerCase().includes('male') || v.lang.startsWith('en'))
+          );
+          if (techVoice) utterance.voice = techVoice;
+
+          utterance.onstart = () => setIsSpeakingAudio(true);
+          utterance.onend = () => {
+            setIsSpeakingAudio(false);
+            clearTimeout(tm);
+          };
+          utterance.onerror = () => {
+            setIsSpeakingAudio(false);
+            clearTimeout(tm);
+          };
+
+          window.speechSynthesis.speak(utterance);
         }
-        window.speechSynthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = isCortana ? 1.05 : isKirk ? 1.0 : 0.94;
-        utterance.pitch = isCortana ? 1.18 : isKirk ? 1.0 : 0.85;
-
-        const voices = window.speechSynthesis.getVoices();
-        const techVoice = voices.find(v =>
-          isCortana
-            ? (v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('samantha'))
-            : (v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('guy') || v.name.toLowerCase().includes('male') || v.lang.startsWith('en'))
-        );
-        if (techVoice) utterance.voice = techVoice;
-
-        utterance.onstart = () => setIsSpeakingAudio(true);
-        utterance.onend = () => {
-          setIsSpeakingAudio(false);
-          clearTimeout(tm);
-        };
-        utterance.onerror = () => {
-          setIsSpeakingAudio(false);
-          clearTimeout(tm);
-        };
-
-        window.speechSynthesis.speak(utterance);
+      } catch {
+        // Acoustic audio tone already synthesized as fallback
       }
-    } catch {
-      // Acoustic audio tone already synthesized as fallback
+    };
+
+    if (isKirk) {
+      // Connect directly to Hermes Apollo Authentic Voice (:8765)
+      fetch('http://127.0.0.1:8765/api/tts/charlie', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, mode: 'authentic' })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.audio_url) {
+          const audio = new Audio('http://127.0.0.1:8765' + data.audio_url);
+          audio.onended = () => {
+            setIsSpeakingAudio(false);
+            clearTimeout(tm);
+          };
+          audio.onerror = () => {
+            fallbackSpeechSynth();
+          };
+          audio.play().catch(() => {
+            fallbackSpeechSynth();
+          });
+        } else {
+          fallbackSpeechSynth();
+        }
+      })
+      .catch(() => {
+        fallbackSpeechSynth();
+      });
+      return;
     }
+
+    fallbackSpeechSynth();
   };
 
   // Transmit Tactical Message to AI Master Chief / Cortana (:8100 & Gemini)
@@ -441,39 +476,43 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
     ]);
 
     try {
-      const res = await fetch('/api/voice/tactical-chat', {
+      const res = await fetch('/api/voice/avatar-dispatch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: textToSend,
-          speaker: selectedVoiceSpeaker,
-          currentStatus: {
-            shieldLevel,
-            viewportMode,
-            nanoTxRate
-          }
+          prompt: textToSend,
+          persona: selectedVoiceSpeaker
         })
       });
 
       if (res.ok) {
         const data = await res.json();
         const replyText = data.text || 'Directive acknowledged.';
-        const speaker = data.speaker || (selectedVoiceSpeaker === 'CORTANA' ? 'UNSC CORTANA (AI)' : selectedVoiceSpeaker === 'KIRK' ? 'CAPTAIN JAMES T. KIRK (STARFLEET)' : 'MASTER CHIEF (SPARTAN-117)');
+        const speaker = data.persona === 'CHARLIE_KIRK' ? 'CHARLIE KIRK (APOLLO BROADCAST)' : data.persona === 'TRUMP' ? 'DONALD J. TRUMP (SOVEREIGN DEALMAKER)' : 'OPTIMUS PRIME (SOVEREIGN COMMANDER)';
 
         // Add to dialogue feed
         setCommsDialogueFeed(prev => [
           ...prev,
           {
             id: 'agent-' + Date.now(),
-            sender: speaker.toLowerCase().includes('cortana') ? 'CORTANA' : speaker.toLowerCase().includes('kirk') ? 'KIRK' : 'CHIEF',
+            sender: data.persona === 'CHARLIE_KIRK' ? 'KIRK' : 'CHIEF',
             speaker: speaker,
             text: replyText,
             timestamp: new Date().toLocaleTimeString()
           }
         ]);
 
-        // Speak and play sound
-        speakHudTactical(replyText, speaker);
+        // Play neural speech audio if available
+        if (data.audio_url) {
+          try {
+            const audio = new Audio(data.audio_url);
+            audio.play().catch(() => speakHudTactical(replyText, speaker));
+          } catch {
+            speakHudTactical(replyText, speaker);
+          }
+        } else {
+          speakHudTactical(replyText, speaker);
+        }
 
         // Execute action if requested
         if (data.action === 'SHIELD_RECHARGE') {
@@ -539,14 +578,22 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
           setMicActive(true);
           playVisorSound('RADIO_KEY');
         };
+        let finalTranscript = '';
         rec.onresult = (event: any) => {
-          let current = '';
+          let interim = '';
           for (let i = event.resultIndex; i < event.results.length; i++) {
-            current += event.results[i][0].transcript;
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+            } else {
+              interim += transcript;
+            }
           }
-          setMicTranscript(current);
-          if (event.results[0]?.isFinal || current.trim().length > 3) {
-            handleSendTacticalMessage(current);
+          const display = (finalTranscript + ' ' + interim).trim();
+          setMicTranscript(display);
+          if (finalTranscript.trim().length > 0) {
+            handleSendTacticalMessage(finalTranscript.trim());
+            finalTranscript = '';
           }
         };
         rec.onerror = () => {
@@ -554,6 +601,10 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
         };
         rec.onend = () => {
           setMicActive(false);
+          if (finalTranscript.trim().length > 0) {
+            handleSendTacticalMessage(finalTranscript.trim());
+            finalTranscript = '';
+          }
         };
         recognitionRef.current = rec;
         try {
@@ -830,6 +881,18 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
               🌐 Multiplayer Aggregator (Firecrawl)
             </button>
             <button
+              onClick={() => setViewportMode('DESKTOP_DEEPMIND')}
+              className={`px-2.5 py-1 rounded font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                viewportMode === 'DESKTOP_DEEPMIND'
+                  ? 'bg-blue-600/35 text-blue-200 border border-blue-400 shadow-sm shadow-blue-500/30 ring-1 ring-blue-400'
+                  : 'bg-slate-900/80 text-blue-400 hover:text-blue-200 hover:bg-slate-800 border border-blue-900/50'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <span>Desktop DeepMind Overlay</span>
+            </button>
+
+            <button
               onClick={() => setViewportMode('RADIO_COMMS')}
               className={`px-2.5 py-1 rounded font-bold transition-all flex items-center gap-1 ${
                 viewportMode === 'RADIO_COMMS'
@@ -1067,6 +1130,12 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
         }}
       >
         {/* Live Immersive Video Render: Captain's Cannabis Smoking Lounge */}
+        {viewportMode === 'DESKTOP_DEEPMIND' && (
+          <div className="relative z-10 w-full h-[760px] rounded-xl overflow-hidden border border-blue-500/40 shadow-2xl bg-[#070b15]/95 backdrop-blur-md">
+            <DesktopDeepmindSuite />
+          </div>
+        )}
+
         {viewportMode === 'LOUNGE_RENDER' && (
           <div className="absolute inset-0 z-10 pointer-events-auto">
             <CaptainsLoungeVideoRender
@@ -1856,7 +1925,7 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSendTacticalMessage();
                   }}
-                  placeholder={`Transmit orders to ${selectedVoiceSpeaker === 'CORTANA' ? 'Cortana' : selectedVoiceSpeaker === 'KIRK' ? 'Captain Kirk' : 'Master Chief'}...`}
+                  placeholder={`Transmit orders to ${selectedVoiceSpeaker === 'CORTANA' ? 'Cortana' : selectedVoiceSpeaker === 'KIRK' ? 'Charlie Kirk' : 'Master Chief'}...`}
                   className="flex-1 px-3 py-2 bg-slate-900 border border-cyan-500/40 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-sans"
                 />
                 <button
@@ -1900,45 +1969,45 @@ export const HaloCeVisorFPV: React.FC<HaloCeVisorFPVProps> = ({ onExecuteTrade, 
                 <div className="grid grid-cols-3 gap-1.5 text-[10px]">
                   <button
                     onClick={() => {
-                      setSelectedVoiceSpeaker('CHIEF');
-                      speakHudTactical('Master Chief on frequency 8100. Spartan armor deflector coils nominal.', 'MASTER CHIEF (SPARTAN-117)');
+                      setSelectedVoiceSpeaker('OPTIMUS_PRIME');
+                      speakHudTactical('Autobots, roll out! Aegentix sovereign core armed on frequency 8100.', 'OPTIMUS PRIME');
                     }}
                     className={`p-2 rounded-lg border font-bold text-center transition-all cursor-pointer ${
-                      selectedVoiceSpeaker === 'CHIEF'
+                      selectedVoiceSpeaker === 'OPTIMUS_PRIME'
                         ? 'bg-cyan-500/25 border-cyan-400 text-cyan-200 shadow-sm'
                         : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
-                    <div className="text-[11px]">🛡️ Chief</div>
-                    <div className="text-[8px] text-slate-400">SIERRA-117</div>
+                    <div className="text-[11px]">🤖 Optimus Prime</div>
+                    <div className="text-[8px] text-cyan-400">PRIME-01 // SparkX</div>
                   </button>
                   <button
                     onClick={() => {
-                      setSelectedVoiceSpeaker('CORTANA');
-                      speakHudTactical('Cortana online. Neural lace telemetry locked.', 'UNSC CORTANA (AI)');
+                      setSelectedVoiceSpeaker('CHARLIE_KIRK');
+                      speakHudTactical("Folks, this is a spectacular prime opportunity for the sovereign mesh!", 'CHARLIE KIRK');
                     }}
                     className={`p-2 rounded-lg border font-bold text-center transition-all cursor-pointer ${
-                      selectedVoiceSpeaker === 'CORTANA'
-                        ? 'bg-purple-500/25 border-purple-400 text-purple-200 shadow-sm'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <div className="text-[11px]">🤖 Cortana</div>
-                    <div className="text-[8px] text-slate-400">CTN-0452-9</div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedVoiceSpeaker('KIRK');
-                      speakHudTactical('Kirk here, Commander. Starfleet warp coils aligned.', 'CAPTAIN JAMES T. KIRK (STARFLEET)');
-                    }}
-                    className={`p-2 rounded-lg border font-bold text-center transition-all cursor-pointer ${
-                      selectedVoiceSpeaker === 'KIRK'
+                      selectedVoiceSpeaker === 'CHARLIE_KIRK'
                         ? 'bg-amber-500/25 border-amber-400 text-amber-200 shadow-sm'
                         : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
-                    <div className="text-[11px]">⭐ Kirk</div>
-                    <div className="text-[8px] text-slate-400">NCC-1701</div>
+                    <div className="text-[11px]">🎙️ Charlie Kirk</div>
+                    <div className="text-[8px] text-amber-400">APOLLO // Prime Event</div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedVoiceSpeaker('TRUMP');
+                      speakHudTactical("Believe me, nobody runs an autonomous agent mesh like Aegentix. Nobody!", 'DONALD J. TRUMP');
+                    }}
+                    className={`p-2 rounded-lg border font-bold text-center transition-all cursor-pointer ${
+                      selectedVoiceSpeaker === 'TRUMP'
+                        ? 'bg-rose-500/25 border-rose-400 text-rose-200 shadow-sm'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <div className="text-[11px]">🏛️ Trump Neural</div>
+                    <div className="text-[8px] text-rose-400">POTUS-47 // Dealmaker</div>
                   </button>
                 </div>
               </div>

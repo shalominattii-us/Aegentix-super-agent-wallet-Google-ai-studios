@@ -175,15 +175,6 @@ export const SYSTEM_TOC_ITEMS: TocItem[] = [
     description: 'Recursive self-inspection, epistemic confidence calibration, bias dampening, and sovereign metadata manifest.',
   },
   {
-    id: 'SPACE_BUNNY_ALPHA',
-    name: 'Space Bunny Alpha Stealth Model',
-    category: 'Autonomous AI',
-    badge: '1M Context Stealth',
-    badgeColor: 'purple',
-    icon: Rocket,
-    description: 'Anonymous stealth AI model with 1,000,000 token context window, adjustable reasoning effort, self-verification, and Solana/EVM stealth arbitrage.',
-  },
-  {
     id: 'NEXUS_REGISTRY',
     name: 'Nexus Skill Registry & NRCP Engine',
     category: 'Autonomous AI',

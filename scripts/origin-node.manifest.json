@@ -18,7 +18,7 @@
       "uiPath": "/ui",
       "dataVolume": "bastet-data",
       "status": "running",
-      "api_token": "Kogg_x4l7fEFSuL4gwxlpOzIyfHvwA89X_jaaHcrrFs",
+      "api_token_env": "BASTET_API_TOKEN",
       "license": "Apache-2.0",
       "role": "Local-first orchestration, gated workflows, per-run metering, audit log, team memory.",
       "supportedExecutors": [

@@ -17,6 +17,11 @@ __pycache__/
 .vault_key
 *.pem
 *.key
+config_hot_agent.json
+config_solana_hot_agent.json
+config_connected_wallets.json
+sovereign_treasury.db
+server.ts.bak*
 
 # Local Agent OS runtime state & workspaces
 .nava/

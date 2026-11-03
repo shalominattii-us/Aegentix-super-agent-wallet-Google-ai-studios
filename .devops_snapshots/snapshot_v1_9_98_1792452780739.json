@@ -1,0 +1,212 @@
+{
+  "name": "Aegentix Sovereign Operating System",
+  "version": "1.9.98",
+  "generatedAt": "2026-10-19T23:33:00.739Z",
+  "_snapshotMeta": {
+    "snapshotId": "snapshot_v1_9_98_1792452780739",
+    "runId": "cycle_98_1792452780035",
+    "timestamp": "2026-10-19T23:33:00.739Z",
+    "canRollback": true
+  },
+  "git": {
+    "branch": "main",
+    "commit": "27957f9"
+  },
+  "capabilities": {
+    "totalSkills": 96,
+    "mcpToolsActive": 17,
+    "voiceAssistant": "Mark-LV Holographic JARVIS (Gemini 3.8 Flash)",
+    "corePort": 3000,
+    "totalContentCreationApps": 16,
+    "timeTravelRollback": "INSTANT_ENABLED"
+  },
+  "products": [
+    {
+      "id": "app-ableton-live-studio",
+      "name": "Ableton Live 11/12 Node & OSC Automation Engine",
+      "category": "AUDIO_DAW",
+      "status": "READY",
+      "capabilities": [
+        "Native OSC Remote Control",
+        "Dynamic XML Set Generator",
+        "MidiFile Transpiler",
+        "Rack Summing"
+      ],
+      "description": "Complete programmatic control over Ableton Live sessions, clips, tracks, and DSP parameter chains."
+    },
+    {
+      "id": "app-cyberdaw-analog-summing",
+      "name": "CyberDAW Analog Console & Tube Saturation Console",
+      "category": "AUDIO_ENGINEERING",
+      "status": "ACTIVE",
+      "capabilities": [
+        "SSL 4000E Summing Bus",
+        "Neve 1073 Preamp Modeling",
+        "1176 FET Limiting",
+        "Tape Saturation"
+      ],
+      "description": "Professional non-linear analog console summing and mastering dynamics engine."
+    },
+    {
+      "id": "app-fullsail-audio-mastering",
+      "name": "Full Sail Collegiate Standard Mastering Suite",
+      "category": "AUDIO_MASTERING",
+      "status": "ACTIVE",
+      "capabilities": [
+        "Streaming (-14 LUFS)",
+        "Club (-9 LUFS)",
+        "Broadcast (EBU R128 -23 LUFS)",
+        "True-Peak Limiter"
+      ],
+      "description": "Automated multi-target loudness compliance, spectral balancing, and DDP delivery."
+    },
+    {
+      "id": "app-spatial-audio-atmos",
+      "name": "Dolby Atmos 7.1.4 Immersive Spatial Audio Studio",
+      "category": "SPATIAL_AUDIO",
+      "status": "ACTIVE",
+      "capabilities": [
+        "7.1.4 Bed & Object Panning",
+        "ADM BWF File Export",
+        "Binaural Headphone Rendering"
+      ],
+      "description": "Immersive multi-channel surround and spatial acoustic modeling."
+    },
+    {
+      "id": "app-vocal-podcast-producer",
+      "name": "Broadcast Voice Chain & Podcast Production Studio",
+      "category": "VOCAL_PRODUCTION",
+      "status": "ACTIVE",
+      "capabilities": [
+        "High-Pass Filtering",
+        "Opto-Compressor",
+        "Multi-band De-esser",
+        "ID3 Metadata Packaging"
+      ],
+      "description": "Vocal acoustic conditioning and radio-grade podcast master engineering."
+    },
+    {
+      "id": "app-obs-broadcast-director",
+      "name": "OBS Studio 32 Broadcast Automation & Switcher",
+      "category": "BROADCAST_STREAMING",
+      "status": "ACTIVE",
+      "port": 4455,
+      "capabilities": [
+        "Multi-Cam Director",
+        "WebSocket 5.x Remote API",
+        "Low-Latency SRT / RTMP Streaming",
+        "DSP Audio Ingest"
+      ],
+      "description": "Automated television broadcast control room and live stream management."
+    },
+    {
+      "id": "app-davinci-color-finishing",
+      "name": "DaVinci Resolve ACES Colorist & HDR Finishing Suite",
+      "category": "VIDEO_FINISHING",
+      "status": "READY",
+      "capabilities": [
+        "ACEScc Color Management",
+        "HDR10+ & Dolby Vision XML",
+        "Perceptual Contrast Tuning"
+      ],
+      "description": "Hollywood-grade cinematic color grading, look-up tables (LUTs), and mastering metadata."
+    },
+    {
+      "id": "app-ffmpeg-abr-transcoder",
+      "name": "FFmpeg Automated Transcoding & Perceptual VMAF Pipeline",
+      "category": "MEDIA_ENCODING",
+      "status": "ACTIVE",
+      "capabilities": [
+        "H.265 / AV1 / ProRes",
+        "ABR Multi-Bitrate Ladders",
+        "VMAF Perceptual Quality Scoring"
+      ],
+      "description": "High-throughput automated video compression and CDN delivery optimization."
+    },
+    {
+      "id": "app-esports-production-live",
+      "name": "Esports Live Telemetry Extraction & Auto-Casting HUD",
+      "category": "ESPORTS_PRODUCTION",
+      "status": "ACTIVE",
+      "capabilities": [
+        "Apex Legends LiveAPI",
+        "CS2 State Integration",
+        "Real-Time Dynamic HUD Overlays"
+      ],
+      "description": "Synchronized live game telemetry and automated AI broadcast casting."
+    },
+    {
+      "id": "app-comfyui-flux-studio",
+      "name": "ComfyUI & Flux / SDXL Procedural Visual Generator",
+      "category": "GENERATIVE_IMAGE",
+      "status": "READY",
+      "capabilities": [
+        "Local GPU Diffusion Nodes",
+        "LoRA Model Blending",
+        "Prompt Expansion",
+        "4K Upscaling"
+      ],
+      "description": "Zero-latency generative image synthesis with custom control nets."
+    },
+    {
+      "id": "app-lyria-music-composer",
+      "name": "Google Lyria 3 & MusicLM Generative Soundtrack Studio",
+      "category": "GENERATIVE_MUSIC",
+      "status": "READY",
+      "capabilities": [
+        "Dynamic Cinematic Scoring",
+        "Multi-Track Stem Generation",
+        "BPM / Key Alignment"
+      ],
+      "description": "Generative ambient, cinematic, and electronic music composition from natural language."
+    },
+    {
+      "id": "app-ai-video-director",
+      "name": "Generative AI Cinematic Video & Scene Director",
+      "category": "GENERATIVE_VIDEO",
+      "status": "READY",
+      "capabilities": [
+        "Runway / Kling / Sora Prompt Director",
+        "Consistent Character Preservation",
+        "Motion Vectoring"
+      ],
+      "description": "Automated scene generation and storyboard shot sequencing."
+    },
+    {
+      "id": "app-jarvis-mark-lv",
+      "name": "JARVIS Mark-LV Holographic Cyberdeck & Voice HUD",
+      "category": "SOVEREIGN_INTELLIGENCE",
+      "status": "ACTIVE",
+      "url": "http://localhost:3000/jarvis.html",
+      "model": "Google Gemini 3.8 Flash + British Speech Synthesis",
+      "description": "Central Iron Man Mark-LV command cockpit with real LLM reasoning and telemetry."
+    },
+    {
+      "id": "app-golden-dome-defense-mesh",
+      "name": "National Sciences & Innovation Academy // Golden Dome Shield",
+      "category": "CIVILIAN_DEFENSE",
+      "status": "ACTIVE",
+      "nodes": 433,
+      "tflops": 1845.8,
+      "description": "Federated civilian AI compute and defensive telemetry grid supporting homeland protection."
+    },
+    {
+      "id": "app-herald-os-hermes",
+      "name": "Herald OS & Hermes Agent WSL2 / Hyper-V Bridge",
+      "category": "AGENT_VIRTUALIZATION",
+      "status": "READY",
+      "nexusSkills": 2735,
+      "description": "Nous Research Hermes Agent OS operating on native Windows 11 virtualization."
+    },
+    {
+      "id": "app-omniroute-ai-router",
+      "name": "OmniRoute Multi-Model Proxy & Free Claude Code",
+      "category": "AI_ROUTER",
+      "status": "ACTIVE",
+      "port": 20128,
+      "url": "http://127.0.0.1:20128/v1",
+      "description": "Multi-provider fallback routing proxy for Claude Code, Ollama, and Grok."
+    }
+  ],
+  "recentNewSkills": []
+}

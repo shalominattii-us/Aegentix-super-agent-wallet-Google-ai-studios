@@ -1,0 +1,1 @@
+{"id":"x402-debit-ac92e8ea","agentId":"Aegentix_Autonomous_Trader_01","destinationUrl":"http://127.0.0.1:3000/api/a2a/services/orderbook-depth","amountUsd":-0.0005,"token":"USDC","chainId":8453,"nonce":"4f26f298e26e1a2e","signature":"0x10c52a7b21d82e9503d8dc9024fa8d8ac1210ec2c156ed61783d16fa544bf7a0","status":"SETTLED_AUTONOMOUS","timestamp":"2026-10-27T20:22:55.312Z"}

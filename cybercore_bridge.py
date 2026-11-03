@@ -7,12 +7,14 @@ and syncs real-time events directly with the Super Agent Wallet Web UI.
 """
 
 import json
+import os
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import sys
 import urllib.request
 
 PORT = 9006
+MAX_CONTENT_LENGTH = 65536
 
 # In-memory telemetry log buffer
 telemetry_events = []
@@ -62,6 +64,10 @@ class TelemetryBridgeHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/telemetry/push" or self.path == "/push":
             content_length = int(self.headers.get("Content-Length", 0))
+            if content_length < 0 or content_length > MAX_CONTENT_LENGTH:
+                self._set_headers(413)
+                self.wfile.write(json.dumps({"error": "Payload Too Large"}).encode("utf-8"))
+                return
             body = self.rfile.read(content_length) if content_length > 0 else b"{}"
             try:
                 event = json.loads(body.decode("utf-8"))
@@ -84,7 +90,7 @@ class TelemetryBridgeHandler(BaseHTTPRequestHandler):
             # Forward to Super Agent Wallet Web Server on Port 3000 if available
             try:
                 req = urllib.request.Request(
-                    "http://localhost:3000/api/telemetry",
+                    "http://127.0.0.1:3000/api/telemetry",
                     data=json.dumps(event).encode("utf-8"),
                     headers={"Content-Type": "application/json"},
                     method="POST",
@@ -105,9 +111,10 @@ class TelemetryBridgeHandler(BaseHTTPRequestHandler):
 
 
 def run(port=PORT):
-    server_address = ("0.0.0.0", port)
+    host = os.environ.get("TELEMETRY_HOST", "127.0.0.1")
+    server_address = (host, port)
     httpd = HTTPServer(server_address, TelemetryBridgeHandler)
-    print(f"[*] CYBERCORE TELEMETRY BRIDGE active on http://0.0.0.0:{port}")
+    print(f"[*] CYBERCORE TELEMETRY BRIDGE active on http://{host}:{port}")
     print("[*] Listening for autonomous heartbeat events from Orchestrator...")
     try:
         httpd.serve_forever()

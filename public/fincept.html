@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FINCEPT TERMINAL // Sovereign Institutional Cyberdeck & Live Orderbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Consolas&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* =====================================================================
+       FINCEPT OBSIDIAN DESIGN SYSTEM (C++20/Qt6 Sovereign Port)
+       ===================================================================== */
+    :root {
+      --bg-base: #07090e;
+      --bg-surface: #0a0e17;
+      --bg-raised: #111726;
+      --bg-card: #0d1322;
+      --bg-hover: #162035;
+      
+      --border-dim: #1a2234;
+      --border-med: #223049;
+      --border-bright: #334768;
+      
+      --accent: #d97706; /* Fincept Gold / Amber */
+      --accent-glow: 0 0 16px rgba(217, 119, 6, 0.4);
+      --accent-dim: rgba(217, 119, 6, 0.12);
+      
+      --cyan: #38bdf8;
+      --cyan-glow: 0 0 14px rgba(56, 189, 248, 0.35);
+      
+      --positive: #10b981;
+      --positive-dim: rgba(16, 185, 129, 0.15);
+      --negative: #ef4444;
+      --negative-dim: rgba(239, 68, 68, 0.15);
+      
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-tertiary: #64748b;
+      --text-muted: #475569;
+      
+      --mono: 'JetBrains Mono', Consolas, ui-monospace, monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --hud: 'Orbitron', -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.4); }
+    ::-webkit-scrollbar-thumb { background: #223049; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--sans);
+      font-size: 12px;
+      line-height: 1.4;
+      user-select: none;
+    }
+
+    #terminal-app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      max-height: 100vh;
+    }
+
+    /* -------------------------------------------------------------
+       TOP SYSTEM BAR
+       ------------------------------------------------------------- */
+    header {
+      height: 48px;
+      flex-shrink: 0;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      gap: 12px;
+      z-index: 100;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 5px;
+      background: linear-gradient(135deg, rgba(217, 119, 6, 0.2), rgba(217, 119, 6, 0.05));
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--hud);
+      font-weight: 900;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--accent-glow);
+    }
+
+    .brand-title {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title h1 {
+      font-family: var(--hud);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-title h1 .ver {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--accent);
+      padding: 1px 4px;
+      background: var(--accent-dim);
+      border-radius: 2px;
+    }
+
+    .brand-title p {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text-tertiary);
+      letter-spacing: 0.5px;
+    }
+
+    /* Ticker Tape */
+    .ticker-tape {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding: 0 8px;
+    }
+
+    .ticker-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: 3px;
+      padding: 3px 8px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .ticker-pill:hover {
+      border-color: var(--accent);
+      background: var(--bg-hover);
+    }
+
+    .ticker-pill .sym { font-weight: 700; color: #fff; }
+    .ticker-pill .price { color: var(--text-secondary); }
+    .ticker-pill .pct.pos { color: var(--positive); }
+    .ticker-pill .pct.neg { color: var(--negative); }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .action-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: 1px solid var(--border-dim);
+      background: var(--bg-raised);
+      color: var(--text-secondary);
+    }
+
+    .action-pill:hover {
+      border-color: var(--accent);
+      color: #fff;
+      background: var(--bg-hover);
+    }
+
+    .action-pill.charlie-intel {
+      background: rgba(217, 119, 6, 0.15);
+      border-color: var(--accent);
+      color: #fbbf24;
+      box-shadow: 0 0 10px rgba(217, 119, 6, 0.25);
+      animation: pulseBtn 2.5s infinite ease-in-out;
+    }
+
+    @keyframes pulseBtn {
+      0%, 100% { box-shadow: 0 0 8px rgba(217, 119, 6, 0.2); }
+      50% { box-shadow: 0 0 16px rgba(217, 119, 6, 0.5); }
+    }
+
+    .action-pill.jarvis {
+      border-color: rgba(56, 189, 248, 0.4);
+      color: var(--cyan);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--positive);
+      box-shadow: 0 0 8px var(--positive);
+      flex-shrink: 0;
+    }
+
+    /* -------------------------------------------------------------
+       MAIN COCKPIT: 3 RIGID OBSIDIAN COLUMNS (100VH LOCK)
+       ------------------------------------------------------------- */
+    main {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 290px 1fr 340px;
+      gap: 1px;
+      background: var(--border-dim);
+    }
+
+    .panel {
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      height: 34px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-dim);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      font-family: var(--hud);
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+    }
+
+    .panel-header .title-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .panel-header .accent-tag {
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 9.5px;
+    }
+
+    /* -------------------------------------------------------------
+       LEFT PANEL: WATCHLIST & SCREENER
+       ------------------------------------------------------------- */
+    .search-box {
+      padding: 8px 10px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .search-box input {
+      flex: 1;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 8px;
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent);
+    }
+
+    .tab-pills {
+      display: flex;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-dim);
+      padding: 2px 6px;
+      gap: 4px;
+    }
+
+    .tab-pill {
+      flex: 1;
+      text-align: center;
+      padding: 4px 0;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    .tab-pill.active {
+      background: var(--bg-raised);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .watchlist-table-container {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .watchlist-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .watchlist-table th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-surface);
+      padding: 6px 8px;
+      font-size: 9.5px;
+      color: var(--text-tertiary);
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-dim);
+      z-index: 10;
+    }
+
+    .watchlist-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .watchlist-table tr:hover td {
+      background: var(--bg-hover);
+    }
+
+    .watchlist-table tr.active td {
+      background: var(--accent-dim);
+      border-left: 2px solid var(--accent);
+    }
+
+    .watchlist-table .sym-col {
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .watchlist-table .name-sub {
+      font-size: 9px;
+      color: var(--text-tertiary);
+      display: block;
+    }
+
+    .watchlist-table .price-col {
+      text-align: right;
+      color: var(--text-primary);
+    }
+
+    .watchlist-table .change-col {
+      text-align: right;
+      font-weight: 600;
+    }
+
+    .change-col.pos { color: var(--positive); }
+    .change-col.neg { color: var(--negative); }
+
+    .screener-summary-box {
+      padding: 10px;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-dim);
+      font-family: var(--mono);
+      font-size: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-item .lbl { color: var(--text-tertiary); font-size: 9px; }
+    .stat-item .val { color: var(--text-primary); font-weight: 700; }
+
+    /* -------------------------------------------------------------
+       CENTER PANEL: KLINECHART EMBED & AUDIO INTEL
+       ------------------------------------------------------------- */
+    .chart-control-strip {
+      height: 38px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-dim);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .active-symbol-info {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .active-symbol-info .sym-name {
+      font-family: var(--hud);
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .active-symbol-info .sym-price {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .active-symbol-info .sym-pct {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .tf-selector {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-dim);
+      border-radius: 3px;
+      padding: 2px;
+    }
+
+    .tf-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-tertiary);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 2px 7px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+    }
+
+    .tf-btn:hover {
+      color: #fff;
+      background: var(--bg-hover);
+    }
+
+    .tf-btn.active {
+      color: #fff;
+      background: var(--accent);
+      font-weight: 700;
+    }
+
+    .chart-container-frame {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      background: #080808;
+    }
+
+    .chart-container-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Intel Briefing Drawer */
+    .charlie-intel-drawer {
+      height: 72px;
+      flex-shrink: 0;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-dim);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .intel-speaker-avatar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar-disc {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d97706, #78350f);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 12px rgba(217, 119, 6, 0.4);
+      flex-shrink: 0;
+    }
+
+    .speaker-meta h4 {
+      font-family: var(--hud);
+      font-size: 11px;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .speaker-meta p {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--accent);
+    }
+
+    .intel-waveform {
+      flex: 1;
+      height: 28px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-dim);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 0 8px;
+      overflow: hidden;
+    }
+
+    .wave-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--accent);
+      border-radius: 1px;
+      transition: height 0.1s ease;
+      opacity: 0.6;
+    }
+
+    .wave-bar.active {
+      animation: waveDance 0.5s infinite ease-in-out alternate;
+    }
+
+    @keyframes waveDance {
+      0% { height: 4px; opacity: 0.4; }
+      100% { height: 22px; opacity: 1; }
+    }
+
+    .intel-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-charlie-play {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-family: var(--hud);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      box-shadow: 0 0 12px rgba(217, 119, 6, 0.35);
+    }
+
+    .btn-charlie-play:hover {
+      background: #f59e0b;
+      box-shadow: 0 0 20px rgba(217, 119, 6, 0.6);
+      transform: translateY(-1px);
+    }
+
+    /* -------------------------------------------------------------
+       RIGHT PANEL: L2 ORDER BOOK, DEPTH, TACTICAL EXECUTION
+       ------------------------------------------------------------- */
+    .orderbook-container {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .book-header-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 10px;
+      background: var(--bg-surface);
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--text-tertiary);
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .book-side {
+      flex: 1;
+      overflow-y: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .book-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 10px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .book-row:hover { background: var(--bg-hover); }
+
+    .book-depth-bar {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    .book-row.ask .book-depth-bar { background: var(--negative); }
+    .book-row.bid .book-depth-bar { background: var(--positive); }
+
+    .book-row.ask .price { color: var(--negative); font-weight: 600; }
+    .book-row.bid .price { color: var(--positive); font-weight: 600; }
+    .book-row .size { color: var(--text-primary); }
+    .book-row .total { color: var(--text-tertiary); }
+
+    .spread-strip {
+      height: 26px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-dim);
+      border-bottom: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .spread-strip .mid-price {
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .spread-strip .spread-val {
+      font-size: 9.5px;
+      color: var(--text-tertiary);
+    }
+
+    /* Execution Ticket */
+    .execution-ticket {
+      background: var(--bg-surface);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .side-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .side-btn {
+      padding: 6px;
+      text-align: center;
+      font-family: var(--hud);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .side-btn.buy {
+      background: var(--positive-dim);
+      border-color: var(--positive);
+      color: var(--positive);
+    }
+
+    .side-btn.buy.active {
+      background: var(--positive);
+      color: #000;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+
+    .side-btn.sell {
+      background: var(--negative-dim);
+      border-color: var(--negative);
+      color: var(--negative);
+    }
+
+    .side-btn.sell.active {
+      background: var(--negative);
+      color: #000;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+
+    .input-field-row {
+      display: flex;
+      align-items: center;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: 3px;
+      padding: 4px 8px;
+    }
+
+    .input-field-row .lbl {
+      color: var(--text-tertiary);
+      font-family: var(--mono);
+      font-size: 9.5px;
+      width: 50px;
+    }
+
+    .input-field-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 11px;
+      text-align: right;
+      outline: none;
+    }
+
+    .input-field-row .unit {
+      color: var(--text-secondary);
+      font-family: var(--mono);
+      font-size: 9.5px;
+      margin-left: 6px;
+    }
+
+    .btn-execute {
+      background: linear-gradient(135deg, var(--accent), #b45309);
+      color: #000;
+      font-family: var(--hud);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      padding: 9px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      box-shadow: var(--accent-glow);
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .btn-execute:hover {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      transform: translateY(-1px);
+    }
+
+    /* Recent Trades Drawer */
+    .recent-trades-drawer {
+      height: 120px;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border-dim);
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .trades-scroll {
+      flex: 1;
+      overflow-y: auto;
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .trade-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 10px;
+    }
+
+    .trade-row.buy .price { color: var(--positive); }
+    .trade-row.sell .price { color: var(--negative); }
+    .trade-row .size { color: var(--text-secondary); }
+    .trade-row .time { color: var(--text-tertiary); }
+  </style>
+</head>
+<body>
+
+<div id="terminal-app">
+
+  <!-- TOP NAVIGATION & MARKET TICKER BAR -->
+  <header>
+    <div class="brand-section">
+      <div class="brand-badge">FT</div>
+      <div class="brand-title">
+        <h1>FINCEPT TERMINAL <span class="ver">v4.5.1</span></h1>
+        <p>SOVEREIGN INSTITUTIONAL CYBERDECK // CHARLIE KIRK AUDIO INTEL</p>
+      </div>
+    </div>
+
+    <!-- Live Ticker Ribbon -->
+    <div class="ticker-tape" id="tickerTape">
+      <!-- Populated dynamically via JS -->
+    </div>
+
+    <!-- Navigation Shortcuts -->
+    <div class="header-actions">
+      <button class="action-pill charlie-intel" id="btnTopCharlieIntel" onclick="triggerCharlieIntel()">
+        <span>🎙️</span>
+        <span>CHARLIE KIRK INTEL</span>
+      </button>
+
+      <a href="/jarvis.html" class="action-pill jarvis" title="Switch to JARVIS Mark-LV National Defense HUD">
+        <span>🦅</span>
+        <span>JARVIS HUD</span>
+      </a>
+
+      <a href="http://localhost:8765" target="_blank" class="action-pill" title="Apollo Hermes Voice OS">
+        <span class="status-dot"></span>
+        <span>APOLLO (:8765)</span>
+      </a>
+
+      <a href="/" class="action-pill" title="Return to Aegentix Super Wallet">
+        <span>🛡️</span>
+        <span>WALLET</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- 3-COLUMN COCKPIT (100VH RIGID VIEWPORT) -->
+  <main>
+    
+    <!-- LEFT PANEL: WATCHLIST & SCREENER -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="title-badge">
+          <span>📊</span>
+          <span>MARKET WATCHLIST</span>
+        </div>
+        <span class="accent-tag" id="screenerCount">12 ASSETS</span>
+      </div>
+
+      <div class="search-box">
+        <input type="text" id="watchlistSearch" placeholder="SEARCH TICKER (BTC, SOL, NVDA)..." oninput="filterWatchlist()">
+      </div>
+
+      <div class="tab-pills">
+        <div class="tab-pill active" onclick="switchWatchlistTab('ALL', this)">ALL</div>
+        <div class="tab-pill" onclick="switchWatchlistTab('CRYPTO', this)">CRYPTO</div>
+        <div class="tab-pill" onclick="switchWatchlistTab('EQUITIES', this)">EQUITIES</div>
+        <div class="tab-pill" onclick="switchWatchlistTab('MACRO', this)">MACRO</div>
+      </div>
+
+      <div class="watchlist-table-container">
+        <table class="watchlist-table">
+          <thead>
+            <tr>
+              <th>SYMBOL</th>
+              <th style="text-align: right;">PRICE</th>
+              <th style="text-align: right;">24H %</th>
+            </tr>
+          </thead>
+          <tbody id="watchlistBody">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="screener-summary-box">
+        <div class="stat-item">
+          <span class="lbl">GLOBAL 24H VOL</span>
+          <span class="val">$148.6B</span>
+        </div>
+        <div class="stat-item">
+          <span class="lbl">BTC DOMINANCE</span>
+          <span class="val">58.4%</span>
+        </div>
+        <div class="stat-item">
+          <span class="lbl">US 10Y YIELD</span>
+          <span class="val">4.24%</span>
+        </div>
+        <div class="stat-item">
+          <span class="lbl">DXY INDEX</span>
+          <span class="val">103.15</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CENTER PANEL: HIGH-PERFORMANCE KLINECHART & INTEL BRIEFING -->
+    <section class="panel">
+      <!-- Active Symbol Strip -->
+      <div class="chart-control-strip">
+        <div class="active-symbol-info">
+          <span class="sym-name" id="currentSymLabel">BTC/USDT</span>
+          <span class="sym-price" id="currentPriceLabel">$68,450.00</span>
+          <span class="sym-pct pos" id="currentChangeLabel">+3.42%</span>
+        </div>
+
+        <div class="tf-selector">
+          <button class="tf-btn" onclick="setTimeframe('1m', this)">1m</button>
+          <button class="tf-btn active" onclick="setTimeframe('5m', this)">5m</button>
+          <button class="tf-btn" onclick="setTimeframe('15m', this)">15m</button>
+          <button class="tf-btn" onclick="setTimeframe('1h', this)">1h</button>
+          <button class="tf-btn" onclick="setTimeframe('4h', this)">4h</button>
+          <button class="tf-btn" onclick="setTimeframe('1D', this)">1D</button>
+        </div>
+      </div>
+
+      <!-- KLineChart Embedded Frame -->
+      <div class="chart-container-frame">
+        <iframe id="klineFrame" src="/fincept-charts/klinechart.html"></iframe>
+      </div>
+
+      <!-- Charlie Kirk Voice Intel Drawer -->
+      <div class="charlie-intel-drawer">
+        <div class="intel-speaker-avatar">
+          <div class="avatar-disc">🎙️</div>
+          <div class="speaker-meta">
+            <h4>CHARLIE KIRK AUTHENTIC INTEL</h4>
+            <p id="intelStatusText">VOICE VAULT READY // CLICK TO BRIEF</p>
+          </div>
+        </div>
+
+        <div class="intel-waveform" id="intelWaveform">
+          <!-- 32 waveform bars -->
+        </div>
+
+        <div class="intel-actions">
+          <select id="topicSelect" style="background: var(--bg-raised); border: 1px solid var(--border-dim); color: #fff; font-family: var(--mono); font-size: 10px; padding: 5px; border-radius: 3px;">
+            <option value="market">⚡ Live Ticker Intel</option>
+            <option value="sovereignty">🛡️ Economic Sovereignty</option>
+            <option value="crypto">💎 Sovereign Crypto Reserve</option>
+            <option value="macro">🏛️ Macro & Treasury Watch</option>
+          </select>
+          <button class="btn-charlie-play" id="btnPlayIntel" onclick="toggleCharlieSpeech()">
+            <span id="playIcon">▶</span>
+            <span id="playLabel">PLAY INTEL</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: L2 ORDER BOOK, EXECUTION TICKET, RECENT TRADES -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="title-badge">
+          <span>📖</span>
+          <span>L2 ORDER BOOK</span>
+        </div>
+        <span class="accent-tag" id="bookDepthTag">PRECISION: 0.1</span>
+      </div>
+
+      <!-- Order Book -->
+      <div class="orderbook-container">
+        <div class="book-header-row">
+          <span>PRICE (USD)</span>
+          <span>SIZE</span>
+          <span>TOTAL</span>
+        </div>
+
+        <!-- Asks (Red) -->
+        <div class="book-side" id="bookAsks" style="justify-content: flex-end;">
+          <!-- Populated via JS -->
+        </div>
+
+        <!-- Mid Spread Strip -->
+        <div class="spread-strip">
+          <div class="mid-price">
+            <span id="midPriceText">68,450.00</span>
+            <span style="font-size: 9px; color: var(--positive);">▲</span>
+          </div>
+          <div class="spread-val">SPREAD: <span id="spreadValue">0.50 (0.001%)</span></div>
+        </div>
+
+        <!-- Bids (Green) -->
+        <div class="book-side" id="bookBids">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <!-- Tactical Execution Ticket -->
+      <div class="execution-ticket">
+        <div class="side-toggle">
+          <div class="side-btn buy active" id="btnBuySide" onclick="setTradeSide('BUY')">BUY / LONG</div>
+          <div class="side-btn sell" id="btnSellSide" onclick="setTradeSide('SELL')">SELL / SHORT</div>
+        </div>
+
+        <div class="input-field-row">
+          <span class="lbl">PRICE</span>
+          <input type="text" id="orderPriceInput" value="68450.00">
+          <span class="unit">USD</span>
+        </div>
+
+        <div class="input-field-row">
+          <span class="lbl">AMOUNT</span>
+          <input type="text" id="orderAmountInput" value="0.25" oninput="updateTotal()">
+          <span class="unit" id="orderUnitLabel">BTC</span>
+        </div>
+
+        <div class="input-field-row">
+          <span class="lbl">EST TOTAL</span>
+          <input type="text" id="orderTotalInput" value="17,112.50" readonly>
+          <span class="unit">USD</span>
+        </div>
+
+        <button class="btn-execute" onclick="executeOrder()">
+          ⚡ EXECUTE SOVEREIGN TRADE
+        </button>
+      </div>
+
+      <!-- Recent Trades Stream -->
+      <div class="recent-trades-drawer">
+        <div class="panel-header" style="height: 24px; font-size: 9.5px; border-top: none;">
+          <span>RECENT TRADES</span>
+          <span style="color: var(--positive);">● STREAMING</span>
+        </div>
+        <div class="trades-scroll" id="tradesScroll">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Audio Player for Charlie Kirk Authentic Voice -->
+<audio id="charlieAudio" preload="auto"></audio>
+
+<script>
+  /* =====================================================================
+     FINCEPT TERMINAL CORE RUNTIME & DATA ENGINE
+     ===================================================================== */
+  const WATCHLIST = [
+    { sym: 'BTC/USDT', base: 'BTC', name: 'Bitcoin Sovereign Core', price: 68450.00, change: 3.42, vol: '42.1B', category: 'CRYPTO' },
+    { sym: 'ETH/USDT', base: 'ETH', name: 'Ethereum Smart Yield', price: 2640.50, change: 1.85, vol: '18.4B', category: 'CRYPTO' },
+    { sym: 'SOL/USDT', base: 'SOL', name: 'Solana Speed Layer', price: 172.80, change: 5.61, vol: '9.2B', category: 'CRYPTO' },
+    { sym: 'XRP/USDT', base: 'XRP', name: 'XRP Cross-Border Rails', price: 0.548, change: -0.42, vol: '2.1B', category: 'CRYPTO' },
+    { sym: 'NVDA', base: 'NVDA', name: 'Nvidia AI Compute', price: 138.25, change: 2.14, vol: '28.3B', category: 'EQUITIES' },
+    { sym: 'TSLA', base: 'TSLA', name: 'Tesla Autonomous Fleet', price: 220.70, change: -1.30, vol: '14.5B', category: 'EQUITIES' },
+    { sym: 'SPY', base: 'SPY', name: 'S&P 500 Index Trust', price: 584.20, change: 0.48, vol: '34.8B', category: 'EQUITIES' },
+    { sym: 'QQQ', base: 'QQQ', name: 'Nasdaq 100 Tech ETF', price: 492.10, change: 0.72, vol: '21.0B', category: 'EQUITIES' },
+    { sym: 'GOLD', base: 'GOLD', name: 'Gold Spot Ounce', price: 2720.40, change: 0.65, vol: '15.2B', category: 'MACRO' },
+    { sym: 'DXY', base: 'DXY', name: 'US Dollar Index', price: 103.15, change: -0.18, vol: '8.4B', category: 'MACRO' },
+    { sym: 'US10Y', base: 'US10Y', name: '10-Yr Treasury Yield', price: 4.24, change: 0.05, vol: '12.0B', category: 'MACRO' },
+    { sym: 'WTI_OIL', base: 'OIL', name: 'Crude Oil Barrel', price: 70.80, change: -1.15, vol: '7.6B', category: 'MACRO' }
+  ];
+
+  let currentSymbol = 'BTC/USDT';
+  let currentBase = 'BTC';
+  let currentPrice = 68450.00;
+  let activeCategory = 'ALL';
+  let activeTradeSide = 'BUY';
+  let isPlayingAudio = false;
+  let audioTimer = null;
+  let chartIframeReady = false;
+
+  const audio = document.getElementById('charlieAudio');
+
+  // Initialize Waveform Visualizer
+  const waveformEl = document.getElementById('intelWaveform');
+  for (let i = 0; i < 36; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    waveformEl.appendChild(bar);
+  }
+
+  // Audio Playback with Dynamic Charlie Kirk Voice Clone
+  function toggleCharlieSpeech() {
+    const topic = document.getElementById('topicSelect')?.value || 'market';
+    if (isPlayingAudio) {
+      audio.pause();
+      audio.currentTime = 0;
+      onAudioEnded();
+    } else {
+      speakCharlieMarketIntel(topic);
+    }
+  }
+
+  function triggerCharlieIntel() {
+    const topic = document.getElementById('topicSelect')?.value || 'market';
+    speakCharlieMarketIntel(topic);
+  }
+
+  function getBriefingText(topic) {
+    if (topic === 'sovereignty') {
+      return `Look, here is the reality: Charlie Kirk on the line. True freedom demands sovereign infrastructure. Centralized banks and inflation are eroding liberty. Take sovereignty of your computational and economic capital.`;
+    }
+    if (topic === 'crypto') {
+      return `Charlie Kirk here with tactical crypto intelligence. Bitcoin, Solana, and digital assets represent an immutable check against centralized currency devaluation. Hold the line on your self-custody.`;
+    }
+    if (topic === 'macro') {
+      return `Commander, macro update from Charlie Kirk. Ten-year Treasuries and the Dollar Index are flashing structural signals across global debt markets. Sovereign discipline is paramount.`;
+    }
+    return `Look, here is the reality: this is Charlie Kirk with your live market briefing. ${currentSymbol} is currently trading at ${formatNum(currentPrice)} dollars. Order books and liquidity depths are fully synchronized across the terminal.`;
+  }
+
+  async function speakCharlieMarketIntel(topic) {
+    const statusText = document.getElementById('intelStatusText');
+    const playIcon = document.getElementById('playIcon');
+    const playLabel = document.getElementById('playLabel');
+    const textToSpeak = getBriefingText(topic);
+
+    statusText.textContent = `SYNTHESIZING CHARLIE KIRK VOICE CLONE...`;
+
+    try {
+      const res = await fetch('/api/tts/charlie', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: textToSpeak, mode: 'cloned' })
+      });
+      const data = await res.json();
+      if (data && data.audio_url) {
+        audio.src = `${data.audio_url}?t=${Date.now()}`;
+        audio.play().then(() => {
+          isPlayingAudio = true;
+          playIcon.textContent = '⏸';
+          playLabel.textContent = 'STOP INTEL';
+          statusText.textContent = `TRANSMITTING CHARLIE KIRK LIVE INTEL`;
+          startWaveform();
+        }).catch(err => {
+          console.warn('Playback error:', err);
+          onAudioEnded();
+        });
+      } else {
+        onAudioEnded();
+      }
+    } catch (err) {
+      console.warn('Synthesis error:', err);
+      statusText.textContent = 'SYNTHESIS TIMEOUT // RETRY';
+      onAudioEnded();
+    }
+  }
+
+  audio.onended = onAudioEnded;
+  audio.onerror = onAudioEnded;
+
+  function onAudioEnded() {
+    isPlayingAudio = false;
+    document.getElementById('playIcon').textContent = '▶';
+    document.getElementById('playLabel').textContent = 'PLAY INTEL';
+    document.getElementById('intelStatusText').textContent = 'VOICE VAULT READY // CLICK TO BRIEF';
+    stopWaveform();
+  }
+
+  function startWaveform() {
+    stopWaveform();
+    const bars = document.querySelectorAll('.wave-bar');
+    audioTimer = setInterval(() => {
+      bars.forEach(bar => {
+        const h = Math.floor(Math.random() * 22) + 4;
+        bar.style.height = `${h}px`;
+        bar.style.opacity = (h / 26) + 0.2;
+      });
+    }, 80);
+  }
+
+  function stopWaveform() {
+    if (audioTimer) clearInterval(audioTimer);
+    document.querySelectorAll('.wave-bar').forEach(bar => {
+      bar.style.height = '4px';
+      bar.style.opacity = '0.4';
+    });
+  }
+
+  // Populate Ticker Tape
+  function initTickerTape() {
+    const tape = document.getElementById('tickerTape');
+    tape.innerHTML = '';
+    WATCHLIST.forEach(item => {
+      const pill = document.createElement('div');
+      pill.className = 'ticker-pill';
+      pill.onclick = () => selectSymbol(item.sym);
+      const isPos = item.change >= 0;
+      pill.innerHTML = `
+        <span class="sym">${item.sym}</span>
+        <span class="price">$${formatNum(item.price)}</span>
+        <span class="pct ${isPos ? 'pos' : 'neg'}">${isPos ? '+' : ''}${item.change}%</span>
+      `;
+      tape.appendChild(pill);
+    });
+  }
+
+  // Populate Watchlist Table
+  function renderWatchlist(items) {
+    const tbody = document.getElementById('watchlistBody');
+    tbody.innerHTML = '';
+    items.forEach(item => {
+      const tr = document.createElement('tr');
+      if (item.sym === currentSymbol) tr.className = 'active';
+      tr.onclick = () => selectSymbol(item.sym);
+      const isPos = item.change >= 0;
+      tr.innerHTML = `
+        <td>
+          <span class="sym-col">${item.sym}</span>
+          <span class="name-sub">${item.name}</span>
+        </td>
+        <td class="price-col">$${formatNum(item.price)}</td>
+        <td class="change-col ${isPos ? 'pos' : 'neg'}">${isPos ? '+' : ''}${item.change}%</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('screenerCount').textContent = `${items.length} ASSETS`;
+  }
+
+  function filterWatchlist() {
+    const q = document.getElementById('watchlistSearch').value.toUpperCase();
+    const filtered = WATCHLIST.filter(item => {
+      const matchCat = activeCategory === 'ALL' || item.category === activeCategory;
+      const matchQ = item.sym.includes(q) || item.name.toUpperCase().includes(q);
+      return matchCat && matchQ;
+    });
+    renderWatchlist(filtered);
+  }
+
+  function switchWatchlistTab(cat, el) {
+    activeCategory = cat;
+    document.querySelectorAll('.tab-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    filterWatchlist();
+  }
+
+  // Select Symbol & Push New Candles to KLineChart
+  function selectSymbol(sym) {
+    const found = WATCHLIST.find(i => i.sym === sym);
+    if (!found) return;
+    currentSymbol = sym;
+    currentBase = found.base;
+    currentPrice = found.price;
+
+    document.getElementById('currentSymLabel').textContent = currentSymbol;
+    document.getElementById('currentPriceLabel').textContent = `$${formatNum(currentPrice)}`;
+    const pctEl = document.getElementById('currentChangeLabel');
+    const isPos = found.change >= 0;
+    pctEl.textContent = `${isPos ? '+' : ''}${found.change}%`;
+    pctEl.className = `sym-pct ${isPos ? 'pos' : 'neg'}`;
+
+    document.getElementById('orderPriceInput').value = currentPrice.toFixed(2);
+    document.getElementById('orderUnitLabel').textContent = currentBase;
+    updateTotal();
+
+    // Re-render watchlist active highlight
+    filterWatchlist();
+
+    // Generate & Push Candles to iframe
+    pushCandlesToChart(currentPrice);
+    generateOrderBook(currentPrice);
+  }
+
+  // Generate Synthetic Historical Candles for Symbol
+  function pushCandlesToChart(basePrice) {
+    const frame = document.getElementById('klineFrame');
+    if (!frame || !frame.contentWindow) return;
+
+    const candles = [];
+    let p = basePrice * 0.94;
+    const now = Date.now();
+    const intervalMs = 5 * 60 * 1000; // 5-minute bars
+    const count = 180;
+
+    for (let i = count; i >= 0; i--) {
+      const ts = now - (i * intervalMs);
+      const delta = (Math.random() - 0.48) * (basePrice * 0.007);
+      const o = p;
+      const c = p + delta;
+      const h = Math.max(o, c) + Math.random() * (basePrice * 0.004);
+      const l = Math.min(o, c) - Math.random() * (basePrice * 0.004);
+      const vol = Math.floor(Math.random() * 500) + 50;
+      candles.push({ timestamp: ts, open: o, high: h, low: l, close: c, volume: vol });
+      p = c;
+    }
+
+    try {
+      if (frame.contentWindow.setCandles) {
+        frame.contentWindow.setCandles(candles);
+      }
+    } catch (e) {
+      console.warn('Kline frame communication wait:', e);
+    }
+  }
+
+  // Real-time Tick Simulator
+  setInterval(() => {
+    const delta = (Math.random() - 0.49) * (currentPrice * 0.0006);
+    currentPrice = Math.max(0.01, currentPrice + delta);
+
+    document.getElementById('currentPriceLabel').textContent = `$${formatNum(currentPrice)}`;
+    document.getElementById('midPriceText').textContent = formatNum(currentPrice);
+
+    // Update candle in frame
+    const frame = document.getElementById('klineFrame');
+    if (frame && frame.contentWindow && frame.contentWindow.updateCandle) {
+      const now = Date.now();
+      frame.contentWindow.updateCandle({
+        timestamp: Math.floor(now / 300000) * 300000,
+        close: currentPrice,
+        high: currentPrice * 1.001,
+        low: currentPrice * 0.999,
+        volume: Math.floor(Math.random() * 10) + 1
+      });
+    }
+
+    // Add random recent trade
+    addRecentTrade(currentPrice, delta >= 0);
+  }, 1200);
+
+  // Generate L2 Order Book Depth
+  function generateOrderBook(mid) {
+    const asksEl = document.getElementById('bookAsks');
+    const bidsEl = document.getElementById('bookBids');
+    asksEl.innerHTML = '';
+    bidsEl.innerHTML = '';
+
+    let askP = mid + 0.50;
+    let cumAsk = 0;
+    const askRows = [];
+    for (let i = 0; i < 9; i++) {
+      askP += Math.random() * (mid * 0.0004) + 0.1;
+      const sz = (Math.random() * 1.8 + 0.1).toFixed(3);
+      cumAsk += parseFloat(sz);
+      askRows.unshift({ price: askP.toFixed(2), size: sz, total: cumAsk.toFixed(3) });
+    }
+
+    askRows.forEach(row => {
+      const depthPct = Math.min(100, (row.total / cumAsk) * 100);
+      const div = document.createElement('div');
+      div.className = 'book-row ask';
+      div.innerHTML = `
+        <div class="book-depth-bar" style="width: ${depthPct}%;"></div>
+        <span class="price">${row.price}</span>
+        <span class="size">${row.size}</span>
+        <span class="total">${row.total}</span>
+      `;
+      asksEl.appendChild(div);
+    });
+
+    let bidP = mid - 0.50;
+    let cumBid = 0;
+    for (let i = 0; i < 9; i++) {
+      bidP -= Math.random() * (mid * 0.0004) + 0.1;
+      const sz = (Math.random() * 1.8 + 0.1).toFixed(3);
+      cumBid += parseFloat(sz);
+      const depthPct = Math.min(100, (cumBid / 15) * 100);
+      const div = document.createElement('div');
+      div.className = 'book-row bid';
+      div.innerHTML = `
+        <div class="book-depth-bar" style="width: ${depthPct}%;"></div>
+        <span class="price">${bidP.toFixed(2)}</span>
+        <span class="size">${sz}</span>
+        <span class="total">${cumBid.toFixed(3)}</span>
+      `;
+      bidsEl.appendChild(div);
+    }
+
+    const spread = (askRows[askRows.length - 1].price - bidP).toFixed(2);
+    document.getElementById('spreadValue').textContent = `${spread} (${((spread / mid) * 100).toFixed(3)}%)`;
+  }
+
+  // Recent Trades
+  function addRecentTrade(price, isBuy) {
+    const scroll = document.getElementById('tradesScroll');
+    const row = document.createElement('div');
+    row.className = `trade-row ${isBuy ? 'buy' : 'sell'}`;
+    const sz = (Math.random() * 0.9 + 0.05).toFixed(3);
+    const d = new Date();
+    const timeStr = d.toTimeString().split(' ')[0];
+    row.innerHTML = `
+      <span class="price">${price.toFixed(2)}</span>
+      <span class="size">${sz}</span>
+      <span class="time">${timeStr}</span>
+    `;
+    scroll.insertBefore(row, scroll.firstChild);
+    if (scroll.children.length > 25) {
+      scroll.removeChild(scroll.lastChild);
+    }
+  }
+
+  // Trade Execution Ticket
+  function setTradeSide(side) {
+    activeTradeSide = side;
+    document.getElementById('btnBuySide').className = `side-btn buy ${side === 'BUY' ? 'active' : ''}`;
+    document.getElementById('btnSellSide').className = `side-btn sell ${side === 'SELL' ? 'active' : ''}`;
+  }
+
+  function updateTotal() {
+    const p = parseFloat(document.getElementById('orderPriceInput').value) || 0;
+    const a = parseFloat(document.getElementById('orderAmountInput').value) || 0;
+    document.getElementById('orderTotalInput').value = formatNum(p * a);
+  }
+
+  function executeOrder() {
+    const p = document.getElementById('orderPriceInput').value;
+    const a = document.getElementById('orderAmountInput').value;
+    alert(`⚡ SOVEREIGN ORDER SUBMITTED:\n${activeTradeSide} ${a} ${currentBase} @ $${p}\nRouted to Aegentix Sovereign Liquidity Pool.`);
+  }
+
+  function setTimeframe(tf, btn) {
+    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    pushCandlesToChart(currentPrice);
+  }
+
+  function formatNum(n) {
+    return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // Frame Load Event
+  document.getElementById('klineFrame').onload = () => {
+    setTimeout(() => {
+      pushCandlesToChart(currentPrice);
+      generateOrderBook(currentPrice);
+    }, 600);
+  };
+
+  // On Page Init
+  window.addEventListener('DOMContentLoaded', () => {
+    initTickerTape();
+    renderWatchlist(WATCHLIST);
+    generateOrderBook(currentPrice);
+  });
+</script>
+
+</body>
+</html>

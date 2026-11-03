@@ -90,7 +90,7 @@ class CyberCoreDaemon:
         
         logger.info("All components initialized successfully")
     
-    def run_oracle(self, host: str = "0.0.0.0", port: int = 50051, unix_socket: str = None):
+    def run_oracle(self, host: str = "127.0.0.1", port: int = 50051, unix_socket: str = None):
         """Run the signing oracle server."""
         if unix_socket and os.name != 'nt':
             logger.info(f"Starting Unix socket oracle on {unix_socket}")
@@ -183,7 +183,7 @@ def main():
     parser.add_argument("command", nargs="?", default="start", choices=[
         "start", "oracle", "migrate", "verify", "daemon"
     ], help="Command to run (default: start)")
-    parser.add_argument("--host", default="0.0.0.0", help="gRPC host (default: 0.0.0.0)")
+    parser.add_argument("--host", default=os.getenv("CYBERCORE_ORACLE_HOST", "127.0.0.1"), help="gRPC host (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=50051, help="gRPC port (default: 50051)")
     parser.add_argument("--unix-socket", default=None,
                        help="Unix socket path for oracle (optional)")

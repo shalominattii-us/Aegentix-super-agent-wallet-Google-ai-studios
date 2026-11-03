@@ -1151,7 +1151,7 @@ export const SymphonyCyberDAW: React.FC<SymphonyCyberDAWProps> = ({
   // Apex Legends LiveAPI Combat Simulator & Sonifier
   const handleSimulateApexEvent = async (type: 'KILL' | 'DAMAGE' | 'SQUAD_WIPE' | 'RING_CLOSE' | 'VICTORY') => {
     try {
-      const res = await fetch('/api/apex/simulate-event', {
+      const res = await fetch('/api/apex/simulate-event?drill=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type }),

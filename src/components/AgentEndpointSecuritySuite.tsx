@@ -194,7 +194,7 @@ export const AgentEndpointSecuritySuite: React.FC<AgentEndpointSecuritySuiteProp
     const nextState = !threatEvasionActive;
     setThreatEvasionActive(nextState);
     try {
-      const res = await fetch('/api/security/telemetry/threat-evasion', {
+      const res = await fetch('/api/security/telemetry/threat-evasion?drill=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: nextState, anomalyThreshold: threatEvasionThreshold }),
@@ -216,7 +216,7 @@ export const AgentEndpointSecuritySuite: React.FC<AgentEndpointSecuritySuiteProp
   const handleSimulateThreat = async () => {
     setIsInjectingThreat(true);
     try {
-      const res = await fetch('/api/security/telemetry/simulate-anomaly', {
+      const res = await fetch('/api/security/telemetry/simulate-anomaly?drill=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
