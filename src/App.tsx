@@ -58,6 +58,7 @@ import { ZeroCapitalFlywheelSuite } from './components/ZeroCapitalFlywheelSuite'
 import { SovereignOriginNodeSuite } from './components/SovereignOriginNodeSuite';
 import { AntiTraffickingSentinelSuite } from './components/AntiTraffickingSentinelSuite';
 import { XamanRevenueBridgeView } from './components/XamanRevenueBridgeView';
+import { XamanXApp } from './portal/pages/XamanXApp';
 import { DesktopDeepmindSuite } from './components/DesktopDeepmindSuite';
 import { 
   WalletBalances, 
@@ -1094,10 +1095,13 @@ export default function App() {
 
             {/* TAB CONTENT: Xaman (XUMM) XRPL Revenue Bridge & Zombie Wallet Engine */}
             {centerTab === 'XAMAN_REVENUE_BRIDGE' && (
-              <XamanRevenueBridgeView
-                onNotify={(msg, type) => setAlertBanner({ message: msg, type })}
-                onOpenFederalRegistry={() => setCenterTab('FEDERAL_CRYPTO')}
-              />
+              <>
+                <XamanXApp />
+                <XamanRevenueBridgeView
+                  onNotify={(msg, type) => setAlertBanner({ message: msg, type })}
+                  onOpenFederalRegistry={() => setCenterTab('FEDERAL_CRYPTO')}
+                />
+              </>
             )}
           </main>
         )
@@ -1526,10 +1530,13 @@ export default function App() {
 
             {/* TAB CONTENT: Xaman (XUMM) XRPL Revenue Bridge & Zombie Wallet Engine */}
             {centerTab === 'XAMAN_REVENUE_BRIDGE' && (
-              <XamanRevenueBridgeView
-                onNotify={(msg, type) => setAlertBanner({ message: msg, type })}
-                onOpenFederalRegistry={() => setCenterTab('FEDERAL_CRYPTO')}
-              />
+              <>
+                <XamanXApp />
+                <XamanRevenueBridgeView
+                  onNotify={(msg, type) => setAlertBanner({ message: msg, type })}
+                  onOpenFederalRegistry={() => setCenterTab('FEDERAL_CRYPTO')}
+                />
+              </>
             )}
 
             {/* Show Ledger Summary under Top Signals if desired */}

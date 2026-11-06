@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Client, Wallet, dropsToXrp, xrpToDrops } from 'xrpl';
+import { handleXamanCreatePayload, inspectXamanServerConfig } from '../research/xamanOmniResearchMode.ts';
 
 export interface VerifiedAmmPoolConfig {
   id: string;
@@ -609,73 +610,17 @@ xrplRouter.post('/draft/offer', (req: Request, res: Response) => {
   }
 });
 
-// Official OMNICYBERDEX Xaman App Credentials
-const XAMAN_OMNICYBERDEX_API_KEY = process.env.XAMAN_API_KEY || '34e7c7d2-9c94-483e-8f21-460893077075';
-const XAMAN_OMNICYBERDEX_API_SECRET = process.env.XAMAN_API_SECRET || 'bb62b56b-7082-4d9c-8be2-c3a3f45cc2e9';
-
-xrplRouter.get('/xaman/payload/:uuid', async (req: Request, res: Response) => {
-  const { uuid } = req.params;
-  try {
-    const response = await fetch(`https://xumm.app/api/v1/platform/payload/${uuid}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'x-api-key': XAMAN_OMNICYBERDEX_API_KEY,
-        'x-api-secret': XAMAN_OMNICYBERDEX_API_SECRET
-      }
-    });
-    if (!response.ok) {
-      return res.status(response.status).json({ success: false, error: `Xumm error: ${response.statusText}` });
-    }
-    const data: any = await response.json();
-    return res.json({
-      success: true,
-      uuid: data?.meta?.uuid,
-      signed: data?.meta?.signed || false,
-      cancelled: data?.meta?.cancelled || false,
-      expired: data?.meta?.expired || false,
-      app: data?.application?.name || 'OMNICYBERDEX',
-      txid: data?.response?.txid || null,
-      account: data?.response?.account || null
-    });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.get('/xaman/readiness', (_req: Request, res: Response) => {
+  res.json({ success: true, readiness: inspectXamanServerConfig(process.env) });
 });
 
-xrplRouter.post('/xaman/create-payload', async (req: Request, res: Response) => {
-  try {
-    const { txjson, instruction } = req.body;
-    if (!txjson) {
-      return res.status(400).json({ success: false, error: 'txjson is required' });
-    }
-    const response = await fetch('https://xumm.app/api/v1/platform/payload', {
-      method: 'POST',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'x-api-key': XAMAN_OMNICYBERDEX_API_KEY,
-        'x-api-secret': XAMAN_OMNICYBERDEX_API_SECRET,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        txjson,
-        options: { submit: true, expire: 1440 },
-        custom_meta: {
-          instruction: instruction || 'OmniCyberDex XRPL Execution',
-          blob: { app: 'OMNICYBERDEX', source: 'Aegentix' }
-        }
-      })
-    });
-    const data: any = await response.json();
-    return res.json({
-      success: response.ok,
-      uuid: data?.uuid,
-      always: data?.next?.always,
-      qr_png: data?.refs?.qr_png,
-      ws: data?.refs?.websocket_status,
-      error: data?.error
-    });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.get('/xaman/payload/:uuid', (_req: Request, res: Response) => {
+  const decision = handleXamanCreatePayload();
+  res.status(decision.httpStatus).json({ ...decision.body, uuid: null });
+});
+
+xrplRouter.post('/xaman/create-payload', (_req: Request, res: Response) => {
+  const decision = handleXamanCreatePayload();
+  res.status(decision.httpStatus).json(decision.body);
 });
 

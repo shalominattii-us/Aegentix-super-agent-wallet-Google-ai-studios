@@ -27,8 +27,16 @@ class SurfScoring:
         total_net_pnl_usd = 0.0
         zero_loss_intact = True
 
+        unknown_pnl = False
         for pos in positions:
-            pnl = float(pos.get("net_pnl_usd", 0.0))
+            raw = pos.get("net_pnl_usd", None)
+            if raw is None:
+                unknown_pnl = True
+                zero_loss_intact = False
+                if strict_zero_loss:
+                    current_streak = 0
+                continue
+            pnl = float(raw)
             total_net_pnl_usd += pnl
             if pnl > 0.0:
                 current_streak += 1
@@ -43,8 +51,10 @@ class SurfScoring:
             "position_count": len(positions),
             "consecutive_positive_positions": max_consecutive if not strict_zero_loss else (current_streak if zero_loss_intact else 0),
             "max_streak_observed": max_consecutive,
-            "total_net_pnl_usd": round(total_net_pnl_usd, 6),
-            "zero_loss_intact": zero_loss_intact and len(positions) > 0,
+            "total_net_pnl_usd": None if unknown_pnl else round(total_net_pnl_usd, 6),
+            "unknown_pnl": unknown_pnl,
+            "zero_loss_intact": zero_loss_intact and len(positions) > 0 and not unknown_pnl,
+            "zero_loss_guarantee": False,
         }
 
     @staticmethod
@@ -52,7 +62,9 @@ class SurfScoring:
         """Computes positive PnL compounding velocity across successive positions on a round trip."""
         if len(positions) < 2 or duration_seconds <= 0:
             return 0.0
-        pnls = [float(p.get("net_pnl_usd", 0.0)) for p in positions]
+        if any(p.get("net_pnl_usd", None) is None for p in positions):
+            return None
+        pnls = [float(p.get("net_pnl_usd")) for p in positions]
         slope = (pnls[-1] - pnls[0]) / len(pnls)
         return round(( sum(pnls) / duration_seconds ) * (1.0 + max(0.0, slope)), 6)
 
@@ -70,13 +82,19 @@ class SurfScoring:
         total_pnl = metrics["total_net_pnl_usd"]
 
         awarded_tier: Optional[Dict[str, Any]] = None
-        for tier in cls.BADGE_TIERS:
-            if streak >= tier["min_streak"] and total_pnl >= tier["min_round_trip_pnl_usd"]:
-                awarded_tier = tier
+        if total_pnl is not None:
+            for tier in cls.BADGE_TIERS:
+                if streak >= tier["min_streak"] and total_pnl >= tier["min_round_trip_pnl_usd"]:
+                    awarded_tier = tier
 
         return {
             **metrics,
             "wave_velocity": velocity,
-            "qualified": awarded_tier is not None,
-            "badge": awarded_tier,
+            "qualified": False,
+            "catalogTierMatch": awarded_tier,
+            "badge": None,
+            "earned": False,
+            "externalAccreditation": False,
+            "profitableStrategyValidated": False,
+            "zeroLossGuarantee": False,
         }

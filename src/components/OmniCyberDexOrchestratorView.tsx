@@ -29,7 +29,15 @@ export const OmniCyberDexOrchestratorView: React.FC<OmniCyberDexOrchestratorView
   const { health, error: healthError } = useBackendHealth(apiBase);
   const hud = deriveHud(status, health);
 
+  const research = status?.mode === 'RESEARCH_SIMULATION' || hud.executionEnabled === false;
   const connected = hud.isLive && !statusError && !healthError;
+  const badgeLabel = research
+    ? 'RESEARCH / SIMULATION'
+    : connected
+      ? 'LIVE — BACKEND ATTACHED'
+      : statusError
+        ? 'BACKEND UNREACHABLE'
+        : 'SYNCING…';
 
   return (
     <div className="bg-[#030508] border border-cyan-500/30 rounded-xl overflow-hidden shadow-2xl space-y-4 font-mono text-xs text-slate-200">
@@ -52,7 +60,7 @@ export const OmniCyberDexOrchestratorView: React.FC<OmniCyberDexOrchestratorView
                 }`}
               >
                 {connected ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-                {connected ? 'LIVE — BACKEND ATTACHED' : statusError ? 'BACKEND UNREACHABLE' : 'SYNCING…'}
+                {badgeLabel}
               </span>
               <span className="px-2 py-0.5 rounded text-[10px] font-black border flex items-center gap-1 bg-cyan-500/20 text-cyan-300 border-cyan-500/40">
                 <Cpu className="w-3 h-3 text-cyan-400" />
@@ -60,7 +68,9 @@ export const OmniCyberDexOrchestratorView: React.FC<OmniCyberDexOrchestratorView
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              Live backend status · zero fabricated figures · unwired metrics shown as NOT WIRED
+              {research
+                ? 'Research status. XAMAN_API_KEY belongs in the repository-root .env. Presence is a boolean from GET /api/xaman/readiness.'
+                : 'Backend status. Unwired metrics stay unknown.'}
             </p>
           </div>
         </div>
@@ -99,6 +109,14 @@ export const OmniCyberDexOrchestratorView: React.FC<OmniCyberDexOrchestratorView
         <div className="mx-4 p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-300 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>{statusError ? `Orchestrator endpoint: ${statusError}` : `Health endpoint: ${healthError}`}</span>
+        </div>
+      )}
+
+      {research && (
+        <div className="mx-4 p-3 rounded-lg border border-cyan-500/30 bg-cyan-500/5 text-cyan-100 space-y-1">
+          <div>XAMAN_API_KEY: {hud.xamanApiKeyConfigured === null ? 'Not checked' : hud.xamanApiKeyConfigured ? 'Present' : 'Not set'}</div>
+          <div>XAMAN_API_SECRET: {hud.xamanApiSecretConfigured === null ? 'Not checked' : hud.xamanApiSecretConfigured ? 'Present' : 'Not set'}</div>
+          <div className="text-slate-400">Simulation for BTC-USD and XRP-USD does not need the secret. The key value is not shown.</div>
         </div>
       )}
 
