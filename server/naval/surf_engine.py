@@ -16,16 +16,20 @@ def evaluate_round_trip_wave(
     positions: List[Dict[str, Any]],
     duration_seconds: float = 60.0,
     ledger: SurfLedger = None,
+    reproducible_observation: bool = False,
 ) -> Dict[str, Any]:
     """
-    Evaluates a completed market round trip for consecutive positive-PnL positions,
-    logs the wave to SurfLedger, and mints a Surfing Badge if tier criteria are met.
+    Evaluates a completed market round trip for consecutive positive-PnL positions
+    and logs the wave. Sample or caller-supplied PnL does not mint an earned badge.
     """
     ledger = ledger or SurfLedger()
     evaluation = SurfScoring.evaluate_surfing_badge(
         positions=positions,
         duration_seconds=duration_seconds,
         strict_zero_loss=True,
+    )
+    evidence_class = (
+        "CALLER_ATTESTED_OBSERVATION" if reproducible_observation else "SYNTHETIC_OR_UNVERIFIED_PNL"
     )
 
     wave_record = {
@@ -35,11 +39,14 @@ def evaluate_round_trip_wave(
         "positions": positions,
         "duration_seconds": duration_seconds,
         "evaluation": evaluation,
+        "evidence_class": evidence_class,
+        "external_certification": False,
+        "trading_authorization": False,
     }
     sealed_wave = ledger.append_wave_round_trip(wave_record)
 
     badge_award = None
-    if evaluation["qualified"] and evaluation["badge"] is not None:
+    if reproducible_observation and evaluation["qualified"] and evaluation["badge"] is not None:
         badge_payload = {
             "agent_id": agent_id,
             "round_trip_id": round_trip_id,
@@ -51,12 +58,18 @@ def evaluate_round_trip_wave(
             "total_net_pnl_usd": evaluation["total_net_pnl_usd"],
             "wave_velocity": evaluation["wave_velocity"],
             "wave_hash": sealed_wave["wave_hash"],
+            "evidence_class": evidence_class,
+            "external_certification": False,
+            "trading_authorization": False,
         }
         badge_award = ledger.append_badge_award(badge_payload)
 
     return {
         "wave": sealed_wave,
         "badge_award": badge_award,
+        "evidence_class": evidence_class,
+        "external_certification": False,
+        "trading_authorization": False,
     }
 
 
@@ -76,8 +89,11 @@ def run_surf_sync_loop():
         duration_seconds=45.0,
         ledger=ledger,
     )
-    badge_name = result["badge_award"]["badge_name"] if result["badge_award"] else "NONE"
-    print(f"🌊 [CYBERSURF ENGINE] Wave round-trip synchronized. Awarded Badge: {badge_name}")
+    badge_name = result["badge_award"]["badge_name"] if result["badge_award"] else "WITHHELD"
+    print(
+        "[CYBERSURF ENGINE] Sample positions evaluated. "
+        f"Badge: {badge_name}. Sample PnL is not earned training evidence."
+    )
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Client, Wallet, dropsToXrp, xrpToDrops } from 'xrpl';
+import { rejectConsequentialAction } from '../research/xamanOmniResearch.ts';
 
 export interface VerifiedAmmPoolConfig {
   id: string;
@@ -406,47 +407,11 @@ export class XrplDevSuite {
     };
   }
 
-  public async executeAutonomousTestnetTrade(params: {
+  public async executeAutonomousTestnetTrade(_params: {
     amountXrp?: number;
     slippagePct?: number;
   }) {
-    const testnetClient = new Client('wss://s.altnet.rippletest.net:51233');
-    try {
-      await testnetClient.connect();
-      // Provision testnet wallet with funded faucet
-      const { wallet } = await testnetClient.fundWallet();
-      
-      const quote = {
-        amountIn: params.amountXrp || 5.0,
-        network: 'XRPL Testnet',
-        account: wallet.address
-      };
-
-      // Create Payment test transaction
-      const prepared = await testnetClient.autofill({
-        TransactionType: 'Payment',
-        Account: wallet.address,
-        Destination: wallet.address,
-        Amount: xrpToDrops(1),
-      });
-
-      const signed = wallet.sign(prepared);
-      const result = await testnetClient.submitAndWait(signed.tx_blob);
-
-      await testnetClient.disconnect();
-      return {
-        success: true,
-        network: 'XRPL Testnet',
-        account: wallet.address,
-        txHash: result.result.hash,
-        ledgerIndex: result.result.ledger_index,
-        validated: (result.result as any).validated || true,
-        engineResult: (result.result.meta as any)?.TransactionResult || 'tesSUCCESS'
-      };
-    } catch (e: any) {
-      if (testnetClient.isConnected()) await testnetClient.disconnect();
-      throw e;
-    }
+    return rejectConsequentialAction('XRPL_SUBMIT');
   }
 
   public createUnsignedPayment(params: {
@@ -483,18 +448,13 @@ export class XrplDevSuite {
     return {
       serverUrl: this.serverUrl,
       connected: this.client.isConnected(),
-      ammEngineStatus: 'OPERATIONAL_XLS30D',
+      ammEngineStatus: 'RESEARCH_SIMULATION',
+      liveExecutionEnabled: false,
       verifiedPoolCount: VERIFIED_XRPL_AMM_POOLS.length,
+      poolListEvidenceClass: 'SEEDED_CLAIM',
       supportedFeatures: [
-        'amm_info (automated market maker XLS-30d)',
-        'amm_pools_scan (multi-asset liquidity discovery)',
-        'amm_quote (constant product math with fee & slippage bounds)',
-        'amm_swap_draft (Xaman/Xumm unsigned payment routing)',
-        'amm_deposit_draft (two-asset proportional liquidity minting)',
-        'amm_withdraw_draft (LP token redemption)',
-        'account_info',
-        'account_lines (trustlines)',
-        'book_offers (DEX orderbook)'
+        'status (local)',
+        'account, lines, order book, AMM, draft, and payload routes reject'
       ]
     };
   }
@@ -507,175 +467,55 @@ xrplRouter.get('/status', (_req: Request, res: Response) => {
   res.json({ success: true, status: xrplDevSuite.getStatus() });
 });
 
-xrplRouter.get('/amm/pools', async (_req: Request, res: Response) => {
-  try {
-    const pools = await xrplDevSuite.getVerifiedAmmPools();
-    res.json({ success: true, pools });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.get('/amm/pools', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('XRPL_READ'));
 });
 
-xrplRouter.post('/amm/quote', async (req: Request, res: Response) => {
-  try {
-    const quote = xrplDevSuite.calculateAmmQuote(req.body);
-    res.json({ success: true, quote });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.post('/amm/quote', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('ORDER_PREVIEW'));
 });
 
-xrplRouter.post('/amm/draft/swap', (req: Request, res: Response) => {
-  try {
-    const draft = xrplDevSuite.createUnsignedAmmSwap(req.body);
-    res.json({ success: true, draft });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.post('/amm/draft/swap', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('ORDER_PREVIEW'));
 });
 
-xrplRouter.post('/amm/draft/deposit', (req: Request, res: Response) => {
-  try {
-    const draft = xrplDevSuite.createUnsignedAmmDeposit(req.body);
-    res.json({ success: true, draft });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.post('/amm/draft/deposit', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('ORDER_PREVIEW'));
 });
 
-xrplRouter.post('/amm/draft/withdraw', (req: Request, res: Response) => {
-  try {
-    const draft = xrplDevSuite.createUnsignedAmmWithdraw(req.body);
-    res.json({ success: true, draft });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.post('/amm/draft/withdraw', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('ORDER_PREVIEW'));
 });
 
-xrplRouter.post('/amm/execute/autonomous-testnet', async (req: Request, res: Response) => {
-  try {
-    const tradeResult = await xrplDevSuite.executeAutonomousTestnetTrade(req.body);
-    res.json({ success: true, tradeResult });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.post('/amm/execute/autonomous-testnet', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('XRPL_SUBMIT'));
 });
 
-xrplRouter.get('/account/:address', async (req: Request, res: Response) => {
-  try {
-    const { address } = req.params;
-    const info = await xrplDevSuite.getAccountInfo(address);
-    res.json({ success: true, info: info.result });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.get('/account/:address', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('XRPL_READ'));
 });
 
-xrplRouter.get('/lines/:address', async (req: Request, res: Response) => {
-  try {
-    const { address } = req.params;
-    const lines = await xrplDevSuite.getAccountLines(address);
-    res.json({ success: true, lines: lines.result });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.get('/lines/:address', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('XRPL_READ'));
 });
 
-xrplRouter.post('/orderbook', async (req: Request, res: Response) => {
-  try {
-    const { takerGets, takerPays } = req.body;
-    const offers = await xrplDevSuite.getOrderBook(takerGets, takerPays);
-    res.json({ success: true, offers: offers.result });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.post('/orderbook', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('XRPL_READ'));
 });
 
-xrplRouter.post('/draft/payment', (req: Request, res: Response) => {
-  try {
-    const tx = xrplDevSuite.createUnsignedPayment(req.body);
-    res.json({ success: true, unsignedTx: tx, instructions: 'Sign via Xaman / Xumm app' });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.post('/draft/payment', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('TRANSFER'));
 });
 
-xrplRouter.post('/draft/offer', (req: Request, res: Response) => {
-  try {
-    const tx = xrplDevSuite.createUnsignedOffer(req.body);
-    res.json({ success: true, unsignedTx: tx, instructions: 'Sign via Xaman / Xumm app' });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.post('/draft/offer', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('CREATE_ORDER'));
 });
 
-// Official OMNICYBERDEX Xaman App Credentials
-const XAMAN_OMNICYBERDEX_API_KEY = process.env.XAMAN_API_KEY || '34e7c7d2-9c94-483e-8f21-460893077075';
-const XAMAN_OMNICYBERDEX_API_SECRET = process.env.XAMAN_API_SECRET || 'bb62b56b-7082-4d9c-8be2-c3a3f45cc2e9';
-
-xrplRouter.get('/xaman/payload/:uuid', async (req: Request, res: Response) => {
-  const { uuid } = req.params;
-  try {
-    const response = await fetch(`https://xumm.app/api/v1/platform/payload/${uuid}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'x-api-key': XAMAN_OMNICYBERDEX_API_KEY,
-        'x-api-secret': XAMAN_OMNICYBERDEX_API_SECRET
-      }
-    });
-    if (!response.ok) {
-      return res.status(response.status).json({ success: false, error: `Xumm error: ${response.statusText}` });
-    }
-    const data: any = await response.json();
-    return res.json({
-      success: true,
-      uuid: data?.meta?.uuid,
-      signed: data?.meta?.signed || false,
-      cancelled: data?.meta?.cancelled || false,
-      expired: data?.meta?.expired || false,
-      app: data?.application?.name || 'OMNICYBERDEX',
-      txid: data?.response?.txid || null,
-      account: data?.response?.account || null
-    });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.get('/xaman/payload/:uuid', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('SUBMIT_PAYLOAD'));
 });
 
-xrplRouter.post('/xaman/create-payload', async (req: Request, res: Response) => {
-  try {
-    const { txjson, instruction } = req.body;
-    if (!txjson) {
-      return res.status(400).json({ success: false, error: 'txjson is required' });
-    }
-    const response = await fetch('https://xumm.app/api/v1/platform/payload', {
-      method: 'POST',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'x-api-key': XAMAN_OMNICYBERDEX_API_KEY,
-        'x-api-secret': XAMAN_OMNICYBERDEX_API_SECRET,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        txjson,
-        options: { submit: true, expire: 1440 },
-        custom_meta: {
-          instruction: instruction || 'OmniCyberDex XRPL Execution',
-          blob: { app: 'OMNICYBERDEX', source: 'Aegentix' }
-        }
-      })
-    });
-    const data: any = await response.json();
-    return res.json({
-      success: response.ok,
-      uuid: data?.uuid,
-      always: data?.next?.always,
-      qr_png: data?.refs?.qr_png,
-      ws: data?.refs?.websocket_status,
-      error: data?.error
-    });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
+xrplRouter.post('/xaman/create-payload', (_req: Request, res: Response) => {
+  res.status(403).json(rejectConsequentialAction('SUBMIT_PAYLOAD'));
 });
 

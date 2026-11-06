@@ -41,12 +41,14 @@ class CyberGymCertifier {
         const cmd = `python -m gym.engine run --drill drills/${d.id} --athlete ${runnerAthlete}`;
         const output = execSync(cmd, { cwd: CYBERGYM_DIR, encoding: "utf-8", timeout: 45000 });
         const meanMatch = output.match(/mean=([0-9\.]+)/);
-        const meanScore = meanMatch ? parseFloat(meanMatch[1]) : 1.0;
+        const meanScore = meanMatch ? parseFloat(meanMatch[1]) : null;
         results.push({
           drillId: d.id,
           name: d.name,
           score: meanScore,
-          passed: meanScore >= 0.95
+          passed: meanScore !== null && meanScore >= 0.95,
+          evidenceClass: meanScore === null ? 'UNPARSED_OUTPUT' : 'LOCAL_PROCESS_OUTPUT',
+          externalCertification: false
         });
       } catch (err) {
         results.push({
@@ -59,8 +61,11 @@ class CyberGymCertifier {
       }
     }
 
-    const allPassed = results.every(r => r.passed);
-    const overallScore = Number((results.reduce((acc, r) => acc + r.score, 0) / results.length).toFixed(3));
+    const allPassed = results.length > 0 && results.every(r => r.passed);
+    const scored = results.filter(r => typeof r.score === 'number');
+    const overallScore = scored.length
+      ? Number((scored.reduce((acc, r) => acc + r.score, 0) / scored.length).toFixed(3))
+      : null;
 
     const certPayload = `${athleteSpec}|${overallScore}|${Date.now()}`;
     const certHash = "0x" + crypto.createHash("sha256").update(certPayload).digest("hex");
@@ -70,17 +75,18 @@ class CyberGymCertifier {
       athleteId: athleteSpec,
       model: athleteModel || "native",
       qualificationDate: new Date().toISOString(),
-      tier: "Omega-Tier Credentialed Sovereign Athlete",
-      status: allPassed ? "ACTIVE_CREDENTIALED" : "PROBATIONARY",
+      tier: "local-drill-record",
+      status: allPassed ? "LOCAL_DRILLS_PASSED" : "NOT_CERTIFIED",
       overallScore,
       drillsEvaluated: results,
       certificateHash: certHash,
-      recoveryIndex: 1.0,
-      authorizedRoles: [
-        "Moltbook-Trader Delta-Neutral Arbitrageur",
-        "Sentinel-9 Escrow Exploit Guardian",
-        "OpenRig Autonomous Seat Lead"
-      ]
+      recoveryIndex: null,
+      externalCertification: false,
+      tradingAuthorization: false,
+      windowsCertifierPath: CREDENTIALS_FILE,
+      windowsGymPath: CYBERGYM_DIR,
+      pathNote: 'C:/Aegentix and C:/Users/eagle/CyberGym are local Windows paths, not an external certifier.',
+      authorizedRoles: []
     };
 
     // Melchizedek 7-Tier Credential & Arena ELO Attachment
@@ -107,7 +113,7 @@ class CyberGymCertifier {
         kind: "athlete_credential",
         source: "cybergym",
         tags: ["cybergym", "athlete", "credential", "omega-tier", "sovereign", "melchizedek"],
-        content: `Athlete ${athleteSpec} successfully certified at level ${certificate.tier} with overall score ${overallScore}. Certificate Hash: ${certHash}`,
+        content: `Local drill record for ${athleteSpec}. Status ${certificate.status}. This is not external certification or trading authorization. Score: ${overallScore}. Hash: ${certHash}`,
         data: certificate
       });
     }

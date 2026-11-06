@@ -84,7 +84,7 @@ export const InstitutionalTradingSuite: React.FC<InstitutionalTradingSuiteProps>
 
   const handleExecuteSopStep = async (stepId: string) => {
     setIsVerifyingStep(stepId);
-    if (onNotify) onNotify(`⚡ Running automated verification: ${stepId}...`, 'INFO');
+    if (onNotify) onNotify(`Checking reproducible evidence for ${stepId}...`, 'INFO');
 
     try {
       const res = await fetch('/api/agent/verify-sop-step', {
@@ -93,6 +93,10 @@ export const InstitutionalTradingSuite: React.FC<InstitutionalTradingSuiteProps>
         body: JSON.stringify({ stepId }),
       });
       const data = await res.json();
+      if (!res.ok || data?.reproducibleEvidence !== true) {
+        if (onNotify) onNotify(`SOP step ${stepId} was not marked verified. No reproducible evidence was returned.`, 'ALERT');
+        return;
+      }
       setRunbookSteps(prev =>
         prev.map(s => {
           if (s.id === stepId) {
@@ -105,14 +109,9 @@ export const InstitutionalTradingSuite: React.FC<InstitutionalTradingSuiteProps>
           return s;
         })
       );
-      if (onNotify) {
-        onNotify(`✅ SOP Step [${stepId}] verified on compliance block #${data.blockIndex || 1}! HMAC: ${data.hmac?.slice(0, 10)}...`, 'SUCCESS');
-      }
-    } catch {
-      setRunbookSteps(prev =>
-        prev.map(s => (s.id === stepId ? { ...s, status: 'VERIFIED', lastVerifiedAt: new Date().toLocaleTimeString('en-US', { hour12: false }) + ' UTC' } : s))
-      );
-      if (onNotify) onNotify(`✅ SOP Step [${stepId}] verified compliant with zero audit infractions!`, 'SUCCESS');
+      if (onNotify) onNotify(`SOP step ${stepId} has reproducible evidence.`, 'SUCCESS');
+    } catch (err: any) {
+      if (onNotify) onNotify(`SOP step ${stepId} was not marked verified. ${err?.message || 'Request failed.'}`, 'ALERT');
     } finally {
       setIsVerifyingStep(null);
     }
@@ -121,7 +120,7 @@ export const InstitutionalTradingSuite: React.FC<InstitutionalTradingSuiteProps>
   const handleExecuteSignal = async (sig: InstitutionalSignal) => {
     setExecutingSignalId(sig.id);
     if (onNotify) {
-      onNotify(`🚀 Dispatching ${sig.direction} order for ${sig.pair} ($${sig.suggestedSizeUsd.toLocaleString()}) via OmniCyberDex...`, 'INFO');
+      onNotify(`Requesting a blocked OmniCyberDex action for ${sig.pair}.`, 'INFO');
     }
 
     try {
@@ -130,54 +129,15 @@ export const InstitutionalTradingSuite: React.FC<InstitutionalTradingSuiteProps>
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pair: sig.pair,
-          route: `CEX(${sig.signalSources[0] || 'Coinbase'})->DEX(${sig.signalSources[1] || 'XRPL'})`,
           sizeUsd: sig.suggestedSizeUsd,
-          mode: 'LIVE_ATOMIC_DISPATCH',
+          mode: 'RESEARCH_SIMULATION',
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        const netProfit = data.netProfitUsd || (sig.expectedAlphaBps * 2.5);
-        setLivePnlUsd(prev => prev + netProfit);
-        setSignals(prev =>
-          prev.map(s => (s.id === sig.id ? { ...s, status: 'FILLED' } : s))
-        );
-        if (onNotify) {
-          onNotify(`🎯 Signal ${sig.id} Filled on-chain! Tx: ${data.txHash?.slice(0, 12)}... (Ledger #${data.ledgerIndex || '107920423'}). Alpha: +$${netProfit.toFixed(2)} USD`, 'SUCCESS');
-        }
-      } else {
-        throw new Error(data.error || 'OmniCyberDex dispatch error');
-      }
-    } catch {
-      // Fallback to agent tool call execution
-      try {
-        const fbRes = await fetch('/api/agent/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            signalId: sig.id,
-            signal: {
-              pair: sig.pair,
-              action: sig.direction.includes('BUY') ? 'BUY' : 'SELL',
-              expectedProfitUsd: sig.expectedAlphaBps * 2.5,
-              confidence: sig.confidencePct / 100,
-              route: `${sig.pair} Cross-Arbitrage`,
-              dexVenue: sig.signalSources[1] || 'XRPL',
-            },
-          }),
-        });
-        const fbData = await fbRes.json();
-        const pnl = sig.expectedAlphaBps * 2.5;
-        setLivePnlUsd(prev => prev + pnl);
-        setSignals(prev =>
-          prev.map(s => (s.id === sig.id ? { ...s, status: 'FILLED' } : s))
-        );
-        if (onNotify) {
-          onNotify(`🎯 Signal ${sig.id} Filled via Agent Tool Call! Realized Alpha: +$${pnl.toFixed(2)}`, 'SUCCESS');
-        }
-      } catch (e: any) {
-        if (onNotify) onNotify(`Execution failed: ${e.message}`, 'ALERT');
-      }
+      const reason = data.reason || data.error || `Rejected (HTTP ${res.status})`;
+      if (onNotify) onNotify(reason, 'ALERT');
+    } catch (err: any) {
+      if (onNotify) onNotify(`Execution rejected: ${err?.message || 'request failed'}`, 'ALERT');
     } finally {
       setExecutingSignalId(null);
     }

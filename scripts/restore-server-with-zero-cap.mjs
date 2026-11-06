@@ -54,6 +54,29 @@ async function main() {
     console.log('Injected zeroCapRouter import + /api/zero-cap mount');
   }
 
+  const RESEARCH_IMPORT = "import { xamanResearchGuard } from './server/research/xamanResearchGuard.ts';";
+  const RESEARCH_MOUNT = 'app.use(xamanResearchGuard);';
+  if (!text.includes('xamanResearchGuard')) {
+    if (text.includes(IMPORT_LINE)) {
+      text = text.replace(IMPORT_LINE, `${IMPORT_LINE}\n${RESEARCH_IMPORT}`);
+    } else {
+      text = text.replace(IMPORT_ANCHOR, `${IMPORT_ANCHOR}\n${RESEARCH_IMPORT}`);
+    }
+    if (text.includes('app.use(express.json());')) {
+      text = text.replace('app.use(express.json());', `app.use(express.json());\n${RESEARCH_MOUNT}`);
+    }
+    console.log('Injected xaman research guard');
+  }
+
+  const SYNC_PATTERN = /syncXamanWalletOnChain\(\)\.catch\(\(\) => \{\}\);\s*setInterval\(\(\) => \{\s*syncXamanWalletOnChain\(\)\.catch\(\(\) => \{\}\);\s*\}, 10000\);/;
+  if (SYNC_PATTERN.test(text) && !text.includes('XAMAN_LIVE_SYNC_ENABLED')) {
+    text = text.replace(
+      SYNC_PATTERN,
+      `const XAMAN_LIVE_SYNC_ENABLED = false;\nif (XAMAN_LIVE_SYNC_ENABLED) {\n  syncXamanWalletOnChain().catch(() => {});\n  setInterval(() => {\n    syncXamanWalletOnChain().catch(() => {});\n  }, 10000);\n}`,
+    );
+    console.log('Left XRPL wallet sync disabled');
+  }
+
   writeFileSync(outFile, text, 'utf8');
   console.log(`Wrote ${outFile} (${text.length} chars)`);
   console.log('Verified import:', text.includes(IMPORT_LINE));
