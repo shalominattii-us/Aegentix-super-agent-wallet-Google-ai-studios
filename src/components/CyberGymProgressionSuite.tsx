@@ -39,6 +39,7 @@ import {
   CYBER_GYM_ACHIEVEMENTS,
   CYBER_GYM_ROLES
 } from '../data/cyberGymAchievementsData';
+import { presentTrainingEvidence } from '../research/cyberGymTrainingEvidence';
 
 interface CyberGymProgressionSuiteProps {
   onNotify?: (message: string, type: 'INFO' | 'SUCCESS' | 'WARN' | 'ALERT') => void;
@@ -102,7 +103,9 @@ export const CyberGymProgressionSuite: React.FC<CyberGymProgressionSuiteProps> =
 
   // Calculate stats
   const totalCount = simulatedAchievementState.length;
-  const verifiedCount = simulatedAchievementState.filter(a => a.status === 'VERIFIED').length;
+  const trainingEvidence = presentTrainingEvidence(simulatedAchievementState);
+  const verifiedCount = trainingEvidence.seedCatalogCount;
+  const earnedCount = trainingEvidence.earnedCount;
   const avgScore = (simulatedAchievementState.reduce((acc, a) => acc + (a.achievedScore || 0), 0) / (totalCount || 1)).toFixed(1);
 
   // Trigger interactive 9-stage verification
@@ -162,7 +165,7 @@ export const CyberGymProgressionSuite: React.FC<CyberGymProgressionSuiteProps> =
         ]);
 
         if (onNotify) {
-          onNotify(`🏆 Verification verified: ${target.name} unlocked for ${activeAthlete}!`, 'SUCCESS');
+          onNotify(`Walkthrough finished for ${target.name}. Seed catalog rows are not earned accreditation.`, 'INFO');
         }
       }
     }, 700);
@@ -199,7 +202,8 @@ export const CyberGymProgressionSuite: React.FC<CyberGymProgressionSuiteProps> =
 **Evaluation Date:** ${new Date().toISOString()}
 **Athlete Node:** ${activeAthlete}
 **Eternium DAG Anchor:** 7b984c13bf2d455d4a54b18ed077e7953106a90f97273990261d6b67ffdb743e
-**Total Certified Achievements:** ${verifiedCount} / ${totalCount}
+**Seed catalog rows (not earned):** ${verifiedCount} / ${totalCount}
+**Earned this session:** ${earnedCount}
 **Mean Capability Score:** ${avgScore}%
 
 ---
@@ -218,7 +222,7 @@ ${simulatedAchievementState.map(ach => `
 `).join('\n')}
 
 ---
-*Signed by Sovereign Judge Enclave (:9001) under NIST SP 800-53 IR-4 / CyberGym Omega Pre Standards.*
+*Catalog export only. Proposed name, not a rename: AEGENTIX Academy. Seed VERIFIED rows are not external accreditation.*
 `;
 
     const blob = new Blob([dossierMarkdown], { type: 'text/markdown;charset=utf-8' });
@@ -252,8 +256,8 @@ ${simulatedAchievementState.map(ach => `
               </h1>
             </div>
             <p className="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
-              Every achievement represents a <strong>measurable capability</strong>, a <strong>verifiable evidence artifact</strong>, and an <strong>unlockable agent behavior</strong>.
-              Achievements are not cosmetic badges—they constitute reproducible developmental lineage for autonomous agent swarms and NSF CyberGenNet experimentation.
+              The rows below are a training catalog. A stored VERIFIED status is seed evidence, not an earned badge and not external accreditation.
+              Proposed name only: AEGENTIX Academy. This suite is still CyberGym.
             </p>
           </div>
 
@@ -262,14 +266,14 @@ ${simulatedAchievementState.map(ach => `
             <div className="px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-800 space-y-0.5">
               <div className="text-[10px] text-slate-400 uppercase tracking-wider">Achievements</div>
               <div className="text-emerald-400 font-bold text-sm">
-                {verifiedCount} / {totalCount} <span className="text-[10px] text-slate-400 font-normal">Verified</span>
+                {verifiedCount} / {totalCount} <span className="text-[10px] text-slate-400 font-normal">Seed catalog, not earned</span>
               </div>
             </div>
 
             <div className="px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-800 space-y-0.5">
               <div className="text-[10px] text-slate-400 uppercase tracking-wider">Mean Score</div>
               <div className="text-amber-400 font-bold text-sm">
-                {avgScore}% <span className="text-[10px] text-emerald-400">Omega Pre</span>
+                {avgScore}% <span className="text-[10px] text-slate-400">Seed claim</span>
               </div>
             </div>
 

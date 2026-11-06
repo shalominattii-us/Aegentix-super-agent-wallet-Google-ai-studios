@@ -48,6 +48,18 @@ import {
   INDUSTRY_MASTERING_CONFIGS,
 } from './src/data/industryAudioProductionConfigs.ts';
 import { apexLiveApiManager } from './src/utils/apexLegendsLiveApiBridge.ts';
+import {
+  buildEngineReport,
+  buildOmniCyberDexStatus,
+  buildOrchestratorStatus,
+  handleOmniCyberDexExecute,
+  handleXamanCreatePayload,
+  handleXamanSaveCredentials,
+  inspectXamanServerConfig,
+  presentXamanWallet,
+  simulateCoinbaseSpot,
+  type PublicLedgerRead,
+} from './src/research/xamanOmniResearchMode.ts';
 
 dotenv.config();
 
@@ -6500,55 +6512,68 @@ app.post('/api/sovereign-portal/test-harness/run', (_req, res) => {
 });
 
 // ============================================
-// OMNICYBERDEX MASTER ORCHESTRATOR API
+// OMNICYBERDEX RESEARCH STATUS
+// Execution stays off. File checks do not read secret files.
 // ============================================
 
-let omniEngines = [
-  {
-    id: 'binance_us',
-    name: 'Binance US Engine',
-    scriptPath: 'C:\\AEGENTIX-WORKSPACE\\omnicyberdex\\engines\\binance_us_engine.py',
-    exchange: 'Binance US',
-    status: 'ACTIVE_TRADING',
-    latencyMs: 14.2,
-    totalVolume24hUsd: 1425800,
-    ordersExecuted24h: 312,
-    pnl24hUsd: 4892.4,
-    pnl24hPct: 3.42,
-  },
-  {
-    id: 'finance_us',
-    name: 'Finance US CEX/DEX Engine',
-    scriptPath: 'C:\\AEGENTIX-WORKSPACE\\src\\python\\finance_us_engine.py',
-    exchange: 'Finance US CEX/DEX',
-    status: 'ACTIVE_TRADING',
-    latencyMs: 18.5,
-    totalVolume24hUsd: 1894200,
-    ordersExecuted24h: 428,
-    pnl24hUsd: 6140.2,
-    pnl24hPct: 4.18,
-  },
-];
+function researchPathExists(candidate: string): boolean {
+  return fs.existsSync(candidate) || fs.existsSync(path.resolve(process.cwd(), candidate));
+}
 
 // GET /api/omnicyberdex/engines
 app.get('/api/omnicyberdex/engines', (_req, res) => {
-  res.json({ success: true, engines: omniEngines, timestamp: new Date().toISOString() });
+  res.json({
+    success: true,
+    mode: 'RESEARCH_SIMULATION',
+    liveExecutionEnabled: false,
+    engines: buildEngineReport(researchPathExists),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// GET /api/omnicyberdex/status
+app.get('/api/omnicyberdex/status', (_req, res) => {
+  res.json({
+    success: true,
+    status: buildOmniCyberDexStatus(process.env, researchPathExists),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// GET /api/orchestrator/status
+app.get('/api/orchestrator/status', (_req, res) => {
+  res.json({
+    success: true,
+    orchestrator: buildOrchestratorStatus(process.env, researchPathExists),
+  });
+});
+
+// GET /api/xaman/readiness and the OmniCyberDex alias
+function sendXamanReadiness(_req: any, res: any) {
+  res.json({
+    success: true,
+    readiness: inspectXamanServerConfig(process.env),
+    timestamp: new Date().toISOString(),
+  });
+}
+app.get('/api/xaman/readiness', sendXamanReadiness);
+app.get('/api/omnicyberdex/xaman-readiness', sendXamanReadiness);
+
+// POST /api/omnicyberdex/research/spot
+app.post('/api/omnicyberdex/research/spot', (req, res) => {
+  const simulation = simulateCoinbaseSpot(req.body || {});
+  res.json({
+    success: true,
+    executed: false,
+    simulation,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // POST /api/omnicyberdex/execute
 app.post('/api/omnicyberdex/execute', (req, res) => {
-  const { pair, route, amountUsd } = req.body || {};
-  res.json({
-    success: true,
-    txId: `OMNI-TX-${Date.now()}`,
-    pair: pair || 'XRP/USD',
-    route: route || 'BUY_BINANCE_SELL_FINANCE',
-    amountUsd: amountUsd || 10000,
-    latencyMs: 16.4,
-    pnlUsd: 184.2,
-    status: 'FILLED',
-    timestamp: new Date().toISOString(),
-  });
+  const decision = handleOmniCyberDexExecute(req.body || {});
+  res.status(decision.httpStatus).json(decision.body);
 });
 
 // ============================================
@@ -8324,6 +8349,8 @@ interface XamanWalletOverview {
   lastSyncAt: string;
 }
 
+let xamanPublicLedgerRead: PublicLedgerRead | null = null;
+
 let xamanWalletData: XamanWalletOverview = {
   address: 'rwB7JKKc5gJ47pPnWCFvQuhVW85mejYF1M',
   walletApp: 'Xaman (formerly Xumm)',
@@ -8373,14 +8400,20 @@ async function syncXamanWalletOnChain(): Promise<void> {
     ]);
 
     const acc = infoRes.result?.account_data;
-    if (acc) {
-      const balXrp = parseFloat(acc.Balance || '0') / 1000000;
-      xamanWalletData.nativeXrpBalance = balXrp;
-      xamanWalletData.nativeXrpUsd = Number((balXrp * 2.68).toFixed(2));
-      xamanWalletData.ownerCount = acc.OwnerCount || 70;
-      xamanWalletData.sequence = acc.Sequence || 94732712;
-      xamanWalletData.previousTxnLgrSeq = acc.PreviousTxnLgrSeq || 106322898;
-      xamanWalletData.gasCapacityTransactions = Math.floor(balXrp / 0.000012);
+    if (acc && acc.Balance != null && acc.Balance !== '') {
+      const drops = Number(acc.Balance);
+      if (Number.isFinite(drops)) {
+        const balXrp = drops / 1000000;
+        xamanWalletData.nativeXrpBalance = balXrp;
+        xamanPublicLedgerRead = {
+          nativeXrpBalance: balXrp,
+          ownerCount: typeof acc.OwnerCount === 'number' ? acc.OwnerCount : null,
+          sequence: typeof acc.Sequence === 'number' ? acc.Sequence : null,
+          previousTxnLgrSeq: typeof acc.PreviousTxnLgrSeq === 'number' ? acc.PreviousTxnLgrSeq : null,
+          trustlineCount: null,
+          readAt: new Date().toISOString(),
+        };
+      }
     }
 
     const lines = linesRes.result?.lines;
@@ -8407,6 +8440,9 @@ async function syncXamanWalletOnChain(): Promise<void> {
       xamanWalletData.totalTrustlines = lines.length;
       xamanWalletData.nonZeroTrustlines = lines.length - zeroCount;
       xamanWalletData.reclaimableReserveXrp = Number((zeroCount * 0.2).toFixed(2));
+      if (xamanPublicLedgerRead) {
+        xamanPublicLedgerRead = { ...xamanPublicLedgerRead, trustlineCount: lines.length };
+      }
 
       const eoc = xamanWalletData.tokens.find(t => t.symbol === 'EOC');
       if (eoc) {
@@ -8430,186 +8466,23 @@ setInterval(() => {
 app.get('/api/xaman/wallet', (_req, res) => {
   res.json({
     success: true,
-    wallet: xamanWalletData,
+    mode: 'RESEARCH_SIMULATION',
+    liveExecutionEnabled: false,
+    wallet: presentXamanWallet(xamanPublicLedgerRead, { queriedAccount: xamanWalletData.address }),
     timestamp: new Date().toISOString(),
   });
 });
 
 // POST /api/xaman/create-payload
-app.post('/api/xaman/create-payload', async (req, res) => {
-  const { strategy, pair } = req.body || {};
-  const payloadId = 'XMN-' + crypto.randomBytes(6).toString('hex');
-  const source = xamanWalletData.address;
-  const seq = xamanWalletData.sequence;
-
-  let title = 'XRPL Sovereign Revenue Action';
-  let description = 'Authorize transaction via Xaman app to execute revenue loop on XRPL';
-  let txJson: Record<string, any> = {};
-  let projectedRevenueUsd = 120.00;
-
-  if (strategy === 'DEX_ARBITRAGE') {
-    title = `XRPL DEX Market Maker: ${pair || 'EOC/XRP'}`;
-    description = 'Place 10,000 EOC limit order on XRPL DEX to capture 0.85% bid-ask spread ($85.00 profit).';
-    projectedRevenueUsd = 85.00;
-    txJson = {
-      TransactionType: 'OfferCreate',
-      Account: source,
-      Sequence: seq,
-      Fee: '12',
-      TakerPays: '1000000', // 1 XRP in drops
-      TakerGets: {
-        currency: 'EOC',
-        issuer: 'rB2fKokBsnHCoFWLqZ89dqp2VCbVkKoY2k',
-        value: '10000',
-      },
-      Flags: 0,
-    };
-  } else if (strategy === 'AMM_YIELD') {
-    title = 'XRPL XLS-30 Automated Market Maker Deposit';
-    description = 'Deposit 50,000 EOC into XRPL Native AMM Pool to earn 14.2% APY continuous LP fees.';
-    projectedRevenueUsd = 210.50;
-    txJson = {
-      TransactionType: 'AMMDeposit',
-      Account: source,
-      Sequence: seq,
-      Fee: '20',
-      Asset: {
-        currency: 'EOC',
-        issuer: 'rB2fKokBsnHCoFWLqZ89dqp2VCbVkKoY2k',
-      },
-      Asset2: {
-        currency: 'XRP',
-      },
-      Amount: {
-        currency: 'EOC',
-        issuer: 'rB2fKokBsnHCoFWLqZ89dqp2VCbVkKoY2k',
-        value: '50000',
-      },
-      Flags: 0x00080000,
-    };
-  } else if (strategy === 'RESERVE_HARVEST') {
-    title = 'Purge Inactive Trustline to Reclaim Locked XRP';
-    description = 'Sets trustline limit to 0 for dormant token to unlock 0.20 XRP owner reserve directly back to wallet.';
-    projectedRevenueUsd = 0.54;
-    txJson = {
-      TransactionType: 'TrustSet',
-      Account: source,
-      Sequence: seq,
-      Fee: '12',
-      LimitAmount: {
-        currency: 'r3yhyhb64tgVJe51zhyW8Miwuhs4gT5zPr',
-        issuer: 'r3yhyhb64tgVJe51zhyW8Miwuhs4gT5zPr',
-        value: '0',
-      },
-      Flags: 0x00020000,
-    };
-  }
-
-  // Check for Xaman / Xumm developer credentials in env
-  let xamanDeepLink = `https://xumm.app/sign/${payloadId}`;
-  let isOfficialXummPayload = false;
-  let xummError: string | null = null;
-
-  const xummApiKey = process.env.XUMM_API_KEY;
-  const xummApiSecret = process.env.XUMM_API_SECRET;
-
-  if (xummApiKey && xummApiSecret) {
-    try {
-      const xummRes = await fetch('https://xumm.app/api/v1/platform/payload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': xummApiKey,
-          'X-API-Secret': xummApiSecret,
-        },
-        body: JSON.stringify({
-          txjson: txJson,
-          options: {
-            submit: true,
-            multisign: false,
-            expire: 1440,
-          },
-          custom_meta: {
-            identifier: payloadId,
-            instruction: description,
-          },
-        }),
-      });
-      const xummData = await xummRes.json();
-      if (xummData?.next?.always) {
-        xamanDeepLink = xummData.next.always;
-        isOfficialXummPayload = true;
-      } else if (xummData?.error) {
-        xummError = xummData.error.message || 'Xumm API Error';
-      }
-    } catch (e: any) {
-      xummError = e?.message || 'Failed to contact Xumm Platform API';
-    }
-  }
-
-  // Generate QR code data URL (encodes the sign link or direct toolkit URL)
-  let qrDataUrl = '';
-  try {
-    qrDataUrl = await QRCode.toDataURL(xamanDeepLink, {
-      margin: 1,
-      color: { dark: '#00E5FF', light: '#050814' },
-      width: 260,
-    });
-  } catch {
-    qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(xamanDeepLink)}`;
-  }
-
-  const payloadRecord: XamanPayloadRecord = {
-    payloadId,
-    strategy: strategy || 'DEX_ARBITRAGE',
-    title,
-    description,
-    sourceAddress: source,
-    txJson,
-    xamanDeepLink,
-    qrDataUrl,
-    status: 'PENDING_XAMAN_SIGNATURE',
-    createdAt: new Date().toISOString(),
-    projectedRevenueUsd,
-  };
-
-  activeXamanPayloads.set(payloadId, payloadRecord);
-
-  res.json({
-    success: true,
-    payload: payloadRecord,
-    isOfficialXummPayload,
-    hasXummCredentials: Boolean(xummApiKey && xummApiSecret),
-    xummError,
-    recommendedTools: [
-      {
-        name: 'XRP Toolkit',
-        url: 'https://www.xrptoolkit.com',
-        description: 'Official web gateway for Xaman. Connect via QR scan to sign AMM deposits, DEX offers, and trustlines without an API key.',
-      },
-      {
-        name: 'XPMarket AMM Pools',
-        url: 'https://xpmarket.com',
-        description: 'Direct XRPL XLS-30 AMM pool liquidity manager with instant Xaman QR wallet connect.',
-      },
-      {
-        name: 'Xaman Developer Console',
-        url: 'https://apps.xaman.dev',
-        description: 'Create a free developer app to get XUMM_API_KEY & XUMM_API_SECRET for automated push links.',
-      },
-    ],
-  });
+app.post('/api/xaman/create-payload', (_req, res) => {
+  const decision = handleXamanCreatePayload();
+  res.status(decision.httpStatus).json(decision.body);
 });
 
 // POST /api/xaman/save-credentials
-app.post('/api/xaman/save-credentials', (req, res) => {
-  const { apiKey, apiSecret } = req.body || {};
-  if (apiKey) process.env.XUMM_API_KEY = apiKey.trim();
-  if (apiSecret) process.env.XUMM_API_SECRET = apiSecret.trim();
-  res.json({
-    success: true,
-    hasXummCredentials: Boolean(process.env.XUMM_API_KEY && process.env.XUMM_API_SECRET),
-  });
+app.post('/api/xaman/save-credentials', (_req, res) => {
+  const decision = handleXamanSaveCredentials();
+  res.status(decision.httpStatus).json(decision.body);
 });
 
 // GET /api/xaman/check-payload/:payloadId

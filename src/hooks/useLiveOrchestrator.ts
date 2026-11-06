@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { deriveHud as deriveResearchHud } from '../research/xamanOmniResearchMode';
 
 /**
  * Live data hooks for the OmniCyberDex decks.
@@ -16,6 +17,18 @@ export interface OrchestratorPipeline {
 
 export interface OrchestratorStatus {
   timestamp: string;
+  mode?: string;
+  liveExecutionEnabled?: boolean;
+  xamanSetup?: {
+    xamanApiKeyConfigured?: boolean;
+    xamanApiSecretConfigured?: boolean;
+    destination?: {
+      fileName?: string;
+      variable?: string;
+      secretVariable?: string;
+      pathRelativeToRepoRoot?: string;
+    };
+  };
   activePipelines: Record<string, OrchestratorPipeline>;
 }
 
@@ -96,18 +109,7 @@ export function useBackendHealth(apiBase = '', intervalMs = 15000) {
   return { health, error };
 }
 
-/** Computes the deck HUD from REAL data only. Unknowns are surfaced as null. */
+/** Computes the deck HUD from reported data. Unknowns stay null. Research mode is not live. */
 export function deriveHud(status: OrchestratorStatus | null, health: HealthStatus | null) {
-  const pipelines = status?.activePipelines ?? {};
-  const names = Object.keys(pipelines);
-  const online = names.filter(n => String(pipelines[n]?.status).toUpperCase() === 'ONLINE');
-  return {
-    pipelineCount: names.length,
-    pipelinesOnline: online.length,
-    pipelinesOnlineNames: online,
-    backendStatus: health?.status ?? null,
-    backendUptimeSeconds: typeof health?.uptime === 'number' ? health.uptime : null,
-    orchestratorTimestamp: status?.timestamp ?? null,
-    isLive: names.length > 0 && online.length === names.length,
-  };
+  return deriveResearchHud(status, health);
 }
