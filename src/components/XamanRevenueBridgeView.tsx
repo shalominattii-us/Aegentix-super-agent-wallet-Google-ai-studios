@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { XamanXApp } from '../portal/pages/XamanXApp';
 import {
   Smartphone,
   QrCode,
@@ -105,7 +106,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
       if (data.success && data.wallet) {
         setWallet(data.wallet);
         if (isManual && onNotify) {
-          onNotify(`XRPL Mainnet Synced: ${data.wallet.address.slice(0, 8)}... (${data.wallet.tokens?.length || 0} trustlines)`, 'SUCCESS');
+          onNotify('Reloaded the embedded Xaman snapshot. It is a sample fixture, not an XRPL observation.', 'INFO');
         }
       }
     } catch (err: any) {
@@ -121,10 +122,6 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
 
   useEffect(() => {
     fetchWalletData();
-    const interval = setInterval(() => {
-      fetchWalletData();
-    }, 12000);
-    return () => clearInterval(interval);
   }, []);
 
   const handleCopy = (text: string, label: string) => {
@@ -150,14 +147,10 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
         body: JSON.stringify({ strategy, pair }),
       });
       const data = await res.json();
-      if (data.success && data.payload) {
-        setActivePayload(data.payload);
-        if (onNotify) {
-          onNotify(`Xaman Payload Generated: ${data.payload.payloadId}. Scan QR with Xaman app to sign.`, 'SUCCESS');
-        }
-      } else {
-        throw new Error(data.error || 'Failed to initialize Xaman payload');
+      if (!res.ok || !data.success || data.rejected) {
+        throw new Error(data.reason || data.error || 'Payload creation rejected');
       }
+      throw new Error('Payload creation did not return a research rejection.');
     } catch (err: any) {
       setDispatchError(err.message || 'Error communicating with Xaman gateway');
       if (onNotify) {
@@ -169,42 +162,24 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
   };
 
   const handleSimulateSign = async () => {
-    setIsSignedSimulated(true);
-    if (!activePayload) return;
-
+    setIsSignedSimulated(false);
     try {
       const res = await fetch('/api/xaman/submit-payload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          payloadId: activePayload.payloadId,
+          payloadId: activePayload?.payloadId || null,
           simulated: false,
         }),
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        setActivePayload({
-          ...activePayload,
-          status: 'SIGNED_AND_SUBMITTED',
-        });
-        if (data.updatedBalances && wallet) {
-          fetchWalletData(true);
-        }
-        if (onNotify) {
-          const txShort = data.txHash ? `${data.txHash.slice(0, 14)}...` : 'XRPL-TX-COMMITTED';
-          const opShare = data.rewarding?.humanOperatorSplitUsd ? `$${data.rewarding.humanOperatorSplitUsd.toFixed(2)}` : '$0.00';
-          onNotify(
-            `🚀 XRPL On-Chain Authorized! Tx: ${txShort} | Ledger #${data.ledgerIndex || 'VALIDATED'} | Operator Alpha: +${opShare}`,
-            'SUCCESS'
-          );
-        }
-      } else {
-        throw new Error(data.error || data.detail || `Submission rejected (HTTP ${res.status})`);
-      }
+      const reason = data.reason || data.error || 'Signing is rejected in research mode.';
+      setDispatchError(reason);
+      if (onNotify) onNotify(reason, 'ALERT');
     } catch (err: any) {
-      if (onNotify) {
-        onNotify(`XRPL Submission Blocked: ${err?.message || 'Live Xaman signing bridge required (503/401)'}`, 'ALERT');
-      }
+      const reason = err?.message || 'Signing is rejected in research mode.';
+      setDispatchError(reason);
+      if (onNotify) onNotify(reason, 'ALERT');
     }
   };
 
@@ -228,7 +203,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
       <div className="flex flex-col items-center justify-center p-12 space-y-4">
         <RefreshCw className="w-10 h-10 text-cyan-400 animate-spin" />
         <div className="text-cyan-200 font-mono text-sm tracking-wide">
-          AGGREGATING ON-CHAIN XRPL WALLET VIA XAMAN BRIDGE...
+          LOADING RESEARCH SNAPSHOT...
         </div>
       </div>
     );
@@ -242,6 +217,12 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      <XamanXApp />
+      {dispatchError && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-950/40 p-3 text-sm text-amber-100">
+          {dispatchError}
+        </div>
+      )}
       {/* Top Banner / Hero */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-cyan-950/30 to-slate-900 border border-cyan-800/40 p-6 md:p-8 shadow-2xl backdrop-blur-md">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
@@ -251,7 +232,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
               <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
               <span>Xaman (XUMM) Non-Custodial Gateway</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="text-emerald-400 font-bold">XRPL Mainnet Validated</span>
+              <span className="text-amber-300 font-bold">SAMPLE FIXTURE — not a ledger observation</span>
             </div>
 
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-3">
@@ -260,8 +241,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
             </h1>
 
             <p className="text-slate-300 text-sm max-w-3xl leading-relaxed">
-              Aggregated directly from the XRP Ledger Mainnet. Connected through the non-custodial Xaman infrastructure.
-              Your private keys remain 100% on your device; transactions are generated and submitted for QR or app authorization.
+              The figures in this panel are the embedded static snapshot. They are not an XRPL observation, not a spendable balance, and not profit. Dispatch buttons call the server and are rejected.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -306,7 +286,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition shadow-lg shadow-cyan-900/30 disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>{isRefreshing ? 'Querying Cluster...' : 'Sync XRPL Node'}</span>
+              <span>{isRefreshing ? 'Reloading snapshot...' : 'Reload sample snapshot'}</span>
             </button>
 
             {onOpenFederalRegistry && (
@@ -337,7 +317,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
               <span>{xrpBal.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })}</span>
               <span className="text-xs font-normal text-cyan-400">XRP</span>
             </div>
-            <div className="text-xs text-slate-400 mt-0.5">≈ ${xrpUsd.toFixed(2)} USD (@ $2.68/XRP)</div>
+            <div className="text-xs text-amber-200 mt-0.5">SAMPLE_FIXTURE · not a balance · ≈ ${xrpUsd.toFixed(2)} is an embedded USD figure</div>
           </div>
           <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
             <span className="text-slate-400">Gas Runaway:</span>
@@ -420,7 +400,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
         >
           <Zap className="w-4 h-4 text-cyan-400" />
           <span>XRPL Revenue Engines</span>
-          <span className="px-1.5 py-0.5 text-xs rounded-full bg-cyan-900/60 text-cyan-300 font-mono">3 Active</span>
+          <span className="px-1.5 py-0.5 text-xs rounded-full bg-amber-900/60 text-amber-200 font-mono">Projected notes</span>
         </button>
 
         <button
@@ -544,7 +524,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
                 className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold text-xs transition shadow-lg shadow-purple-950/50 disabled:opacity-50"
               >
                 <QrCode className="w-4 h-4" />
-                <span>Circulate EOC via Xaman</span>
+                <span>Request dispatch (server rejects)</span>
               </button>
             </div>
 
@@ -587,7 +567,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
                 className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-xs transition shadow-lg shadow-cyan-950/50 disabled:opacity-50"
               >
                 <TrendingUp className="w-4 h-4" />
-                <span>Seed AMM via Xaman</span>
+                <span>Request dispatch (server rejects)</span>
               </button>
             </div>
 
@@ -630,7 +610,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
                 className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs transition shadow-lg shadow-emerald-950/50 disabled:opacity-50"
               >
                 <Zap className="w-4 h-4" />
-                <span>Sweep to XRP via Xaman</span>
+                <span>Request dispatch (server rejects)</span>
               </button>
             </div>
 
@@ -673,7 +653,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
                 className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-semibold text-xs transition shadow-lg shadow-amber-950/50 disabled:opacity-50"
               >
                 <Coins className="w-4 h-4" />
-                <span>Reclaim 0.60 XRP via Xaman</span>
+                <span>Request dispatch (server rejects)</span>
               </button>
             </div>
           </div>
@@ -989,7 +969,7 @@ export const XamanRevenueBridgeView: React.FC<XamanRevenueBridgeViewProps> = ({
                       : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
                   }`}
                 >
-                  {isSignedSimulated ? '✓ Authorized (Sim)' : 'Simulate (Dev Mode)'}
+                  {isSignedSimulated ? 'Not authorized' : 'Request signature (server rejects)'}
                 </button>
               </div>
             </div>

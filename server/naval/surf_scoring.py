@@ -79,4 +79,10 @@ class SurfScoring:
             "wave_velocity": velocity,
             "qualified": awarded_tier is not None,
             "badge": awarded_tier,
+            # Tier math on caller-supplied PnL is not an earned badge, a market
+            # observation, or permission to trade.
+            "evidence_class": "CALLER_SUPPLIED_PNL",
+            "external_certification": False,
+            "trading_authorization": False,
+            "counts_as_earned_badge": False,
         }

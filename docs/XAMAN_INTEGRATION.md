@@ -1,8 +1,10 @@
 # Xaman Integration Guide
 
+> Research milestone: this document describes a daemon, SDK wrapper, and tRPC router that are **not in this tree**. Do not use it to start trading. Live execution is false. See `docs/XAMAN_RESEARCH_MILESTONE.md`. A Xaman API key is not signing permission. Do not put live secrets in this file.
+
 ## Overview
 
-The Xaman SDK and Trading Daemon enable autonomous swarm trading on the XRP Ledger through the Sovereign System Portal. The daemon runs as a background service that executes trades based on market signals and swarm decisions.
+The sections below are an unimplemented design note. The current app exposes a research/simulation console and rejects payload creation, signing, and fills.
 
 ## Architecture
 
@@ -45,8 +47,8 @@ The Xaman SDK and Trading Daemon enable autonomous swarm trading on the XRP Ledg
 Add Xaman credentials to `.env.local`:
 
 ```env
-XAMAN_API_KEY=34e7c7d2-9c94-483e-8f21-460893077075
-XAMAN_API_SECRET=bb62b56b-7082-4d9c-8be2-c3a3f45cc2e9
+XAMAN_API_KEY=
+XAMAN_API_SECRET=
 ```
 
 ### 2. Initialize Daemon

@@ -14,6 +14,9 @@
   </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
+  <div class="max-w-7xl mx-auto mb-4 p-3 rounded-xl border border-amber-500/50 bg-amber-950/40 text-amber-100 text-xs">
+    RESEARCH_SIMULATION. Live execution is false. Sign links and fund transfers are removed. Figures on this page are historical copy, not observations, fills, or profit.
+  </div>
   <div class="max-w-7xl mx-auto space-y-6">
 
     <!-- Top Navigation / Status Header -->
@@ -31,7 +34,7 @@
         <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
           OmniCyberDex
           <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mono font-bold">
-            Autonomous 24/7 Active
+            Research / simulation · execution disabled
           </span>
         </h1>
         <p class="text-xs text-slate-400">
@@ -42,7 +45,7 @@
       <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 mono text-xs text-right">
         <div class="text-slate-400">Custody Wallet</div>
         <div class="text-cyan-300 font-bold">rwB7JKKc5gJ47pPnWCFvQuhVW85mejYF1M</div>
-        <div class="text-emerald-400 font-semibold mt-1" id="live-xrp-display">Live Balance: Loading...</div>
+        <div class="text-amber-300 font-semibold mt-1" id="live-xrp-display">No live balance read</div>
       </div>
     </header>
 
@@ -102,9 +105,9 @@
         </div>
 
         <div class="pt-2 flex items-center gap-3">
-          <a href="https://xumm.app/sign/072ad677-c74a-4219-8af5-9ee240af1991" target="_blank" class="flex-1 py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider text-center transition shadow-lg">
-            Sign 1.2 XRP Gas in Xaman &rarr;
-          </a>
+          <button type="button" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 text-amber-200 font-bold text-xs uppercase tracking-wider text-center" onclick="showResearchRejection('FUND_MOVEMENT')">
+            Fund movement rejected
+          </button>
           <a href="/xaman-hub.html" class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition">
             View QR Code
           </a>
@@ -181,7 +184,7 @@
                 <td class="py-3 text-[11px] text-slate-400">r4jLfS...FN26</td>
                 <td class="py-3">Continuous Circulation</td>
                 <td class="py-3 text-right">
-                  <a href="https://xumm.app/sign/90f815ce-dec3-4857-a4e2-e9ca18282920" target="_blank" class="text-cyan-400 hover:underline">Sign Order &rarr;</a>
+                  <button type="button" class="text-amber-300" onclick="showResearchRejection('CREATE_ORDER')">Order rejected</button>
                 </td>
               </tr>
               <tr>
@@ -190,7 +193,7 @@
                 <td class="py-3 text-[11px] text-slate-400">45.15 XRP Reserve</td>
                 <td class="py-3">Micro-Harvesting</td>
                 <td class="py-3 text-right">
-                  <a href="https://xumm.app/sign/b2d94aaf-23cc-4752-881d-e1cee6490b5d" target="_blank" class="text-cyan-400 hover:underline">Sign Order &rarr;</a>
+                  <button type="button" class="text-amber-300" onclick="showResearchRejection('CREATE_ORDER')">Order rejected</button>
                 </td>
               </tr>
               <tr>
@@ -199,7 +202,7 @@
                 <td class="py-3 text-[11px] text-slate-400">19.73 XRP Reserve</td>
                 <td class="py-3">Micro-Harvesting</td>
                 <td class="py-3 text-right">
-                  <a href="https://xumm.app/sign/20bd675d-1fdd-441e-bbe5-ddb7b595c5c6" target="_blank" class="text-cyan-400 hover:underline">Sign Order &rarr;</a>
+                  <button type="button" class="text-amber-300" onclick="showResearchRejection('CREATE_ORDER')">Order rejected</button>
                 </td>
               </tr>
               <tr>
@@ -653,44 +656,12 @@
       }
     }
 
+    function showResearchRejection(action) {
+      alert('Rejected in research/simulation mode: ' + action + '. Live execution is false. No signature, order, or transfer was created.');
+    }
+
     async function fundSolanaAgentFromPhantom() {
-      try {
-        const provider = getPhantomProvider();
-        if (!provider) {
-          alert('Please open this page in Microsoft Edge where Phantom is installed, then click Sync Phantom.');
-          return;
-        }
-
-        const resp = await provider.connect();
-        const fromPubkey = resp.publicKey;
-        const targetAgent = "F9L8LGFaRZ69goGcC1Y8KLJu1yfi5XQEHP2BsJYBKFCq";
-
-        if (typeof solanaWeb3 === 'undefined') {
-          alert('Solana Web3 library is still initializing. Please wait a moment and click again.');
-          return;
-        }
-
-        const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
-        const { blockhash } = await connection.getLatestBlockhash();
-
-        const transaction = new solanaWeb3.Transaction().add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: fromPubkey,
-            toPubkey: new solanaWeb3.PublicKey(targetAgent),
-            lamports: Math.floor(0.02 * solanaWeb3.LAMPORTS_PER_SOL)
-          })
-        );
-
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = fromPubkey;
-
-        alert('Phantom will now prompt you to approve sending 0.02 SOL gas to the Autonomous Trader Bot (F9L8L...).');
-        const signature = await provider.signAndSendTransaction(transaction);
-        alert('SUCCESS! Transaction submitted: ' + signature.signature + '\n\nThe Autonomous Solana Bot (Task-20303) will activate within 8 seconds!');
-        loadConnectedWallets();
-      } catch (err) {
-        alert('Gas funding cancelled or failed: ' + err.message);
-      }
+      showResearchRejection('FUND_MOVEMENT');
     }
 
     async function connectSolflare() {
@@ -796,29 +767,17 @@
       });
     }
 
-    async function updateTelemetry() {
-      try {
-        const res = await fetch('/api/xrpl/continuous-trading');
-        const data = await res.json();
-        if (data && data.telemetry) {
-          document.getElementById('metric-circulated').innerText = Number(data.telemetry.totalEocCirculated).toLocaleString() + ' EOC';
-          document.getElementById('metric-profit').innerText = '+' + Number(data.telemetry.totalXrpProfitDeposited).toFixed(6) + ' XRP';
-        }
-      } catch (e) {}
-
-      try {
-        const res = await fetch('/api/xrpl/account/rwB7JKKc5gJ47pPnWCFvQuhVW85mejYF1M');
-        const data = await res.json();
-        if (data && data.info && data.info.account_data) {
-          const bal = (Number(data.info.account_data.Balance) / 1000000).toFixed(6);
-          document.getElementById('live-xrp-display').innerText = `Live Balance: ${bal} XRP`;
-        }
-      } catch (e) {}
+    function updateTelemetry() {
+      const circ = document.getElementById('metric-circulated');
+      const profit = document.getElementById('metric-profit');
+      const bal = document.getElementById('live-xrp-display');
+      if (circ) circ.innerText = 'SAMPLE — not observed';
+      if (profit) profit.innerText = 'Not a profit observation';
+      if (bal) bal.innerText = 'No live balance read';
     }
 
     loadConnectedWallets();
     updateTelemetry();
-    setInterval(updateTelemetry, 5000);
   </script>
 </body>
 </html>

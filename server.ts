@@ -13,6 +13,7 @@ import { GoogleGenAI } from '@google/genai';
 import { SHALOMINATTII_REPOS as ALL_GITHUB_REPOS, GITHUB_USER_PROFILE } from './src/data/githubReposData.ts';
 import { grokMcpRouter } from './src/mcp/grokMcpServer.ts';
 import { zeroCapRouter } from './server/zero-cap/routes.ts';
+import { xamanResearchGuard } from './server/research/xamanResearchGuard.ts';
 import { nexusRegistry } from './src/nexus/nexusRegistryEngine.ts';
 import { ANTI_TRAFFICKING_DATASETS, evaluateAntiTraffickingCompliance } from './src/data/antiTraffickingDatasets.ts';
 import { generateAbletonLiveXml } from './src/utils/abletonLiveSetGenerator.ts';
@@ -158,6 +159,7 @@ async function callProxyToSovereignCompliance(params: {
 
 const app = express();
 app.use(express.json());
+app.use(xamanResearchGuard);
 
 // Standard health endpoints for Cloud Run, load balancers & Aegentix health stack
 app.get(['/health', '/healthz', '/api/health', '/api/healthz', '/api/status'], (_req, res) => {
@@ -2865,119 +2867,17 @@ app.post('/api/agent/generate-signal', async (req, res) => {
 });
 
 // POST /api/agent/execute: Executes a pending signal or manual trade via ROG Sovereign Bridge (:8081)
-app.post('/api/agent/execute', async (req, res) => {
-  const { signalId, customTrade, bridge_url } = req.body || {};
-
-  let targetSignal = signals.find((s) => s.id === signalId);
-  let pair = targetSignal?.pair || customTrade?.pair || 'ETH/USDT';
-  let amount = targetSignal?.amount || customTrade?.amount || 1.0;
-  let action = targetSignal?.action || customTrade?.action || 'ARBITRAGE';
-  let asset = pair.split('/')[0];
-  let profit = targetSignal?.estimatedProfitUsd || (amount * 24.5);
-
-  // 1. Audit Security Indicators
-  thoughtLogs.unshift({
-    id: createUniqueId('th-sec'),
-    timestamp: new Date().toISOString(),
-    level: 'SECURITY',
-    step: 'PRE-FLIGHT AUDIT',
-    message: `Auditing 5 indicators for ${action} on ${pair} (${amount} ${asset}). Invariants verified.`,
-  });
-
-  // 2. Call ROG Gemini Bridge (:8081) proxy_to_sovereign_compliance tool
-  // Physical execution: Bridge forwards to physical :9001 on ROG, signing the transaction on C:\ disk
-  let sovereignResult: SovereignComplianceResult;
-  try {
-    sovereignResult = await callProxyToSovereignCompliance({
-      actor_id: 'actor-001',
-      action_type: 'TRADE_EXECUTION',
-      context: {
-        signalId,
-        pair,
-        amount,
-        action,
-        profit,
-        timestamp: new Date().toISOString(),
-      },
-      bridge_url,
-    });
-  } catch (err: any) {
-    return res.status(503).json({
-      success: false,
-      ok: false,
-      error: `Trade authorization blocked: ROG Gemini Bridge (:8081) unreachable (${err.message}). Master actor-001 HMAC signature required before moving funds.`,
-      bridge_hijack: true,
-      bridge_url: configuredBridgeUrl,
-    });
-  }
-
-  // 3. Compliance Block chained with ROG HMAC
-  const compBlock = appendComplianceBlock('actor-001 [ROG-SOVEREIGN-BRIDGE]', 'TRADE_EXECUTION_DISPATCH', {
-    pair,
-    amount,
-    action,
-    profit,
-    hmacSignature: sovereignResult.hmac_signature,
-    auditId: sovereignResult.audit_id,
-    blockHeight: sovereignResult.block_height,
-  });
-
-  // 4. Mutate Balances
-  const isArbitrage = action === 'ARBITRAGE';
-  const fee = Number((Math.random() * 2 + 1.5).toFixed(2));
-  
-  balances.totalUsd += profit;
-  balances.dailyPnlUsd += profit;
-  if (isArbitrage) {
-    balances.cexUsd += profit * 0.55;
-    balances.dexUsd += profit * 0.45;
-  }
-
-  // 5. Create Transaction Record
-  const newTx: TransactionRecord = {
-    id: createUniqueId('tx'),
-    timestamp: new Date().toISOString(),
-    type: isArbitrage ? 'CROSS_ARBITRAGE' : 'DEX_SWAP',
-    venue: isArbitrage ? 'CROSS_EXCHANGE' : 'ON_CHAIN_DEX',
-    asset,
-    pair,
-    amount,
-    executionPrice: 2684.50,
-    feeUsd: fee,
-    slippagePct: 0.08,
-    txHash: `0x${crypto.randomBytes(20).toString('hex')}`,
-    status: 'CONFIRMED',
-    complianceHash: sovereignResult.hmac_signature,
-  };
-
-  transactions.unshift(newTx);
-  if (transactions.length > 50) transactions.pop();
-
-  if (targetSignal) {
-    targetSignal.status = 'EXECUTED';
-  }
-
-  thoughtLogs.unshift({
-    id: createUniqueId('th-exec'),
-    timestamp: new Date().toISOString(),
-    level: 'INFO',
-    step: 'EXECUTION COMPLETE',
-    message: `Execution verified on ${newTx.venue}. Profit: +$${profit.toFixed(2)} | TxHash: ${newTx.txHash.slice(0, 10)}... | Physical ROG Block #${sovereignResult.block_height || compBlock.height}`,
-  });
-
-  res.json({
-    success: true,
-    ok: true,
-    transaction: newTx,
-    complianceBlock: compBlock,
-    updatedBalances: balances,
-    sovereign_bridge: {
-      verified: true,
-      hmac_signature: sovereignResult.hmac_signature,
-      audit_id: sovereignResult.audit_id,
-      block_height: sovereignResult.block_height,
-      bridge_url: sovereignResult.bridge_url,
-    },
+app.post('/api/agent/execute', async (_req, res) => {
+  return res.status(403).json({
+    success: false,
+    rejected: true,
+    mode: 'RESEARCH_SIMULATION',
+    liveExecutionEnabled: false,
+    action: 'EXECUTE_FILL',
+    reason: 'Trade execution is rejected in the research/simulation milestone.',
+    payloadCreated: false,
+    orderCreated: false,
+    fundsMoved: false,
   });
 });
 
@@ -6536,18 +6436,17 @@ app.get('/api/omnicyberdex/engines', (_req, res) => {
 });
 
 // POST /api/omnicyberdex/execute
-app.post('/api/omnicyberdex/execute', (req, res) => {
-  const { pair, route, amountUsd } = req.body || {};
-  res.json({
-    success: true,
-    txId: `OMNI-TX-${Date.now()}`,
-    pair: pair || 'XRP/USD',
-    route: route || 'BUY_BINANCE_SELL_FINANCE',
-    amountUsd: amountUsd || 10000,
-    latencyMs: 16.4,
-    pnlUsd: 184.2,
-    status: 'FILLED',
-    timestamp: new Date().toISOString(),
+app.post('/api/omnicyberdex/execute', (_req, res) => {
+  res.status(403).json({
+    success: false,
+    rejected: true,
+    mode: 'RESEARCH_SIMULATION',
+    liveExecutionEnabled: false,
+    action: 'EXECUTE_FILL',
+    reason: 'Fills are disabled. The previous FILLED response was a synthetic fill, not an execution.',
+    payloadCreated: false,
+    orderCreated: false,
+    fundsMoved: false,
   });
 });
 
@@ -8420,195 +8319,63 @@ async function syncXamanWalletOnChain(): Promise<void> {
   }
 }
 
-// Initial sync on startup + background interval
-syncXamanWalletOnChain().catch(() => {});
-setInterval(() => {
+// Research/simulation milestone: do not poll XRPL or start a balance monitor.
+const XAMAN_LIVE_SYNC_ENABLED = false;
+if (XAMAN_LIVE_SYNC_ENABLED) {
   syncXamanWalletOnChain().catch(() => {});
-}, 10000);
+  setInterval(() => {
+    syncXamanWalletOnChain().catch(() => {});
+  }, 10000);
+}
 
 // GET /api/xaman/wallet
 app.get('/api/xaman/wallet', (_req, res) => {
   res.json({
     success: true,
-    wallet: xamanWalletData,
+    mode: 'RESEARCH_SIMULATION',
+    liveExecutionEnabled: false,
+    signingPermission: false,
+    wallet: {
+      ...xamanWalletData,
+      evidenceClass: 'SAMPLE_FIXTURE',
+      evidenceLabel: 'Static numbers embedded in server source. Not a live XRPL account read.',
+      countsAsBalance: false,
+      countsAsMarketObservation: false,
+      liveSyncEnabled: false,
+      network: 'not-queried',
+    },
     timestamp: new Date().toISOString(),
   });
 });
 
 // POST /api/xaman/create-payload
-app.post('/api/xaman/create-payload', async (req, res) => {
-  const { strategy, pair } = req.body || {};
-  const payloadId = 'XMN-' + crypto.randomBytes(6).toString('hex');
-  const source = xamanWalletData.address;
-  const seq = xamanWalletData.sequence;
-
-  let title = 'XRPL Sovereign Revenue Action';
-  let description = 'Authorize transaction via Xaman app to execute revenue loop on XRPL';
-  let txJson: Record<string, any> = {};
-  let projectedRevenueUsd = 120.00;
-
-  if (strategy === 'DEX_ARBITRAGE') {
-    title = `XRPL DEX Market Maker: ${pair || 'EOC/XRP'}`;
-    description = 'Place 10,000 EOC limit order on XRPL DEX to capture 0.85% bid-ask spread ($85.00 profit).';
-    projectedRevenueUsd = 85.00;
-    txJson = {
-      TransactionType: 'OfferCreate',
-      Account: source,
-      Sequence: seq,
-      Fee: '12',
-      TakerPays: '1000000', // 1 XRP in drops
-      TakerGets: {
-        currency: 'EOC',
-        issuer: 'rB2fKokBsnHCoFWLqZ89dqp2VCbVkKoY2k',
-        value: '10000',
-      },
-      Flags: 0,
-    };
-  } else if (strategy === 'AMM_YIELD') {
-    title = 'XRPL XLS-30 Automated Market Maker Deposit';
-    description = 'Deposit 50,000 EOC into XRPL Native AMM Pool to earn 14.2% APY continuous LP fees.';
-    projectedRevenueUsd = 210.50;
-    txJson = {
-      TransactionType: 'AMMDeposit',
-      Account: source,
-      Sequence: seq,
-      Fee: '20',
-      Asset: {
-        currency: 'EOC',
-        issuer: 'rB2fKokBsnHCoFWLqZ89dqp2VCbVkKoY2k',
-      },
-      Asset2: {
-        currency: 'XRP',
-      },
-      Amount: {
-        currency: 'EOC',
-        issuer: 'rB2fKokBsnHCoFWLqZ89dqp2VCbVkKoY2k',
-        value: '50000',
-      },
-      Flags: 0x00080000,
-    };
-  } else if (strategy === 'RESERVE_HARVEST') {
-    title = 'Purge Inactive Trustline to Reclaim Locked XRP';
-    description = 'Sets trustline limit to 0 for dormant token to unlock 0.20 XRP owner reserve directly back to wallet.';
-    projectedRevenueUsd = 0.54;
-    txJson = {
-      TransactionType: 'TrustSet',
-      Account: source,
-      Sequence: seq,
-      Fee: '12',
-      LimitAmount: {
-        currency: 'r3yhyhb64tgVJe51zhyW8Miwuhs4gT5zPr',
-        issuer: 'r3yhyhb64tgVJe51zhyW8Miwuhs4gT5zPr',
-        value: '0',
-      },
-      Flags: 0x00020000,
-    };
-  }
-
-  // Check for Xaman / Xumm developer credentials in env
-  let xamanDeepLink = `https://xumm.app/sign/${payloadId}`;
-  let isOfficialXummPayload = false;
-  let xummError: string | null = null;
-
-  const xummApiKey = process.env.XUMM_API_KEY;
-  const xummApiSecret = process.env.XUMM_API_SECRET;
-
-  if (xummApiKey && xummApiSecret) {
-    try {
-      const xummRes = await fetch('https://xumm.app/api/v1/platform/payload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': xummApiKey,
-          'X-API-Secret': xummApiSecret,
-        },
-        body: JSON.stringify({
-          txjson: txJson,
-          options: {
-            submit: true,
-            multisign: false,
-            expire: 1440,
-          },
-          custom_meta: {
-            identifier: payloadId,
-            instruction: description,
-          },
-        }),
-      });
-      const xummData = await xummRes.json();
-      if (xummData?.next?.always) {
-        xamanDeepLink = xummData.next.always;
-        isOfficialXummPayload = true;
-      } else if (xummData?.error) {
-        xummError = xummData.error.message || 'Xumm API Error';
-      }
-    } catch (e: any) {
-      xummError = e?.message || 'Failed to contact Xumm Platform API';
-    }
-  }
-
-  // Generate QR code data URL (encodes the sign link or direct toolkit URL)
-  let qrDataUrl = '';
-  try {
-    qrDataUrl = await QRCode.toDataURL(xamanDeepLink, {
-      margin: 1,
-      color: { dark: '#00E5FF', light: '#050814' },
-      width: 260,
-    });
-  } catch {
-    qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(xamanDeepLink)}`;
-  }
-
-  const payloadRecord: XamanPayloadRecord = {
-    payloadId,
-    strategy: strategy || 'DEX_ARBITRAGE',
-    title,
-    description,
-    sourceAddress: source,
-    txJson,
-    xamanDeepLink,
-    qrDataUrl,
-    status: 'PENDING_XAMAN_SIGNATURE',
-    createdAt: new Date().toISOString(),
-    projectedRevenueUsd,
-  };
-
-  activeXamanPayloads.set(payloadId, payloadRecord);
-
-  res.json({
-    success: true,
-    payload: payloadRecord,
-    isOfficialXummPayload,
-    hasXummCredentials: Boolean(xummApiKey && xummApiSecret),
-    xummError,
-    recommendedTools: [
-      {
-        name: 'XRP Toolkit',
-        url: 'https://www.xrptoolkit.com',
-        description: 'Official web gateway for Xaman. Connect via QR scan to sign AMM deposits, DEX offers, and trustlines without an API key.',
-      },
-      {
-        name: 'XPMarket AMM Pools',
-        url: 'https://xpmarket.com',
-        description: 'Direct XRPL XLS-30 AMM pool liquidity manager with instant Xaman QR wallet connect.',
-      },
-      {
-        name: 'Xaman Developer Console',
-        url: 'https://apps.xaman.dev',
-        description: 'Create a free developer app to get XUMM_API_KEY & XUMM_API_SECRET for automated push links.',
-      },
-    ],
+app.post('/api/xaman/create-payload', async (_req, res) => {
+  return res.status(403).json({
+    success: false,
+    rejected: true,
+    mode: 'RESEARCH_SIMULATION',
+    liveExecutionEnabled: false,
+    action: 'SUBMIT_PAYLOAD',
+    reason: 'Transaction payload creation and submission are disabled. A Xaman API key is not signing permission.',
+    payloadCreated: false,
+    orderCreated: false,
+    fundsMoved: false,
+    signingPermission: false,
   });
 });
 
 // POST /api/xaman/save-credentials
-app.post('/api/xaman/save-credentials', (req, res) => {
-  const { apiKey, apiSecret } = req.body || {};
-  if (apiKey) process.env.XUMM_API_KEY = apiKey.trim();
-  if (apiSecret) process.env.XUMM_API_SECRET = apiSecret.trim();
-  res.json({
-    success: true,
-    hasXummCredentials: Boolean(process.env.XUMM_API_KEY && process.env.XUMM_API_SECRET),
+app.post('/api/xaman/save-credentials', (_req, res) => {
+  res.status(403).json({
+    success: false,
+    rejected: true,
+    mode: 'RESEARCH_SIMULATION',
+    liveExecutionEnabled: false,
+    action: 'SAVE_CREDENTIALS',
+    reason: 'Credential changes are disabled.',
+    payloadCreated: false,
+    orderCreated: false,
+    fundsMoved: false,
   });
 });
 
@@ -9104,31 +8871,17 @@ app.get('/api/trading/signals', (_req, res) => {
 });
 
 // POST /api/trading/signals/execute (Gated under Guardian / Judge authority)
-app.post('/api/trading/signals/execute', (req, res) => {
-  const guardianToken = req.headers['x-guardian-token'] || req.headers['x-guardian-approval'];
-  const isStrictGuardian = process.env.STRICT_GUARDIAN === 'true';
-
-  if (isStrictGuardian && !guardianToken) {
-    return res.status(403).json({
-      success: false,
-      error: 'GUARDIAN_AUTHORITY_REQUIRED',
-      message: 'Autonomous trade execution rejected: Missing valid x-guardian-token approval header per .hermes.md policy.',
-    });
-  }
-
-  const { signalId, pair, sizeUsd } = req.body || {};
-  const executionTxId = `EXEC-ARB-${Date.now()}`;
-  res.json({
-    success: true,
-    executionTxId,
-    signalId: signalId || 'SIG-98401',
-    pair: pair || 'XRP/USD',
-    sizeUsd: sizeUsd || 12500,
-    status: 'FILLED',
-    guardianVerified: Boolean(guardianToken),
-    fillLatencyMs: 14.8,
-    capturedAlphaUsd: 42.50,
-    executedAt: new Date().toISOString(),
+app.post('/api/trading/signals/execute', (_req, res) => {
+  res.status(403).json({
+    success: false,
+    rejected: true,
+    mode: 'RESEARCH_SIMULATION',
+    liveExecutionEnabled: false,
+    action: 'EXECUTE_FILL',
+    reason: 'Signal execution is rejected. A guardian header does not authorize a fill in this milestone.',
+    payloadCreated: false,
+    orderCreated: false,
+    fundsMoved: false,
   });
 });
 
@@ -9136,6 +8889,11 @@ app.post('/api/trading/signals/execute', (req, res) => {
 app.get('/api/trading/metrics', (_req, res) => {
   res.json({
     success: true,
+    mode: 'RESEARCH_SIMULATION',
+    liveExecutionEnabled: false,
+    evidenceClass: 'SAMPLE_FIXTURE',
+    countsAsPnl: false,
+    evidenceLabel: 'Static desk figures embedded in server source. Not a profit observation.',
     deskCapitalUsd: 875000,
     netAlpha24hUsd: 14114.40,
     netAlpha24hPct: 1.61,

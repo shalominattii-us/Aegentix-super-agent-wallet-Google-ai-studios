@@ -39,6 +39,7 @@ import {
   CYBER_GYM_ACHIEVEMENTS,
   CYBER_GYM_ROLES
 } from '../data/cyberGymAchievementsData';
+import { classifySeededClaim } from '../research/xamanOmniResearch';
 
 interface CyberGymProgressionSuiteProps {
   onNotify?: (message: string, type: 'INFO' | 'SUCCESS' | 'WARN' | 'ALERT') => void;
@@ -199,7 +200,8 @@ export const CyberGymProgressionSuite: React.FC<CyberGymProgressionSuiteProps> =
 **Evaluation Date:** ${new Date().toISOString()}
 **Athlete Node:** ${activeAthlete}
 **Eternium DAG Anchor:** 7b984c13bf2d455d4a54b18ed077e7953106a90f97273990261d6b67ffdb743e
-**Total Certified Achievements:** ${verifiedCount} / ${totalCount}
+**Seeded status VERIFIED count:** ${verifiedCount} / ${totalCount}
+**Label:** ${classifySeededClaim({ id: 'SEEDED_SET', status: 'VERIFIED' }).displayLabel}
 **Mean Capability Score:** ${avgScore}%
 
 ---
@@ -218,7 +220,7 @@ ${simulatedAchievementState.map(ach => `
 `).join('\n')}
 
 ---
-*Signed by Sovereign Judge Enclave (:9001) under NIST SP 800-53 IR-4 / CyberGym Omega Pre Standards.*
+*Seeded local fixture. This export is not an external certification, a NIST attestation, or trading authorization.*
 `;
 
     const blob = new Blob([dossierMarkdown], { type: 'text/markdown;charset=utf-8' });
@@ -262,7 +264,7 @@ ${simulatedAchievementState.map(ach => `
             <div className="px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-800 space-y-0.5">
               <div className="text-[10px] text-slate-400 uppercase tracking-wider">Achievements</div>
               <div className="text-emerald-400 font-bold text-sm">
-                {verifiedCount} / {totalCount} <span className="text-[10px] text-slate-400 font-normal">Verified</span>
+                {verifiedCount} / {totalCount} <span className="text-[10px] text-slate-400 font-normal">Seeded VERIFIED</span>
               </div>
             </div>
 
@@ -308,7 +310,9 @@ ${simulatedAchievementState.map(ach => `
         <div className="mt-4 p-3 rounded-xl bg-amber-950/20 border border-amber-900/40 text-[11px] text-amber-200/90 flex items-start gap-2.5">
           <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div className="leading-snug">
-            <strong className="text-amber-300">Developmental Formula:</strong> Instead of <em>"Agent defeated scenario,"</em> the CyberGym progression engine verifies:
+            <strong className="text-amber-300">Seeded records:</strong> {classifySeededClaim({ id: 'RECON_1', status: 'VERIFIED' }).displayLabel}. Stored scores are not earned unless a reproducible test in this build produced them.
+            <br />
+            <strong className="text-amber-300">Developmental Formula:</strong> Instead of <em>"Agent defeated scenario,"</em> the CyberGym progression engine describes:
             <span className="text-white font-mono bg-black/40 px-1.5 py-0.5 rounded mx-1">
               "Agent demonstrated capability X under constraints Y, producing evidence Z, with score S."
             </span>
@@ -484,9 +488,9 @@ ${simulatedAchievementState.map(ach => `
 
                         {/* Status Stamp */}
                         <div className="text-right shrink-0">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-200 border border-amber-500/30">
                             <CheckCircle2 className="w-3 h-3" />
-                            <span>{ach.achievedScore?.toFixed(1)}%</span>
+                            <span>SEEDED {ach.achievedScore?.toFixed(1)}%</span>
                           </span>
                         </div>
                       </div>
