@@ -21,19 +21,31 @@ import {
   getDocFromServer,
   Firestore 
 } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import fileConfig from '../../firebase-applet-config.json';
+import { isExposedSecret } from '../security/exposedSecrets.mjs';
 
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+function resolveFirebaseConfig(): Record<string, unknown> | null {
+  const env = import.meta.env as Record<string, string | undefined>;
+  const apiKey = String(env.VITE_FIREBASE_API_KEY || env.FIREBASE_API_KEY || '').trim();
+  if (!apiKey || isExposedSecret(apiKey)) return null;
+  return { ...fileConfig, apiKey };
+}
 
-export const auth = getAuth(app);
+const firebaseConfig = resolveFirebaseConfig();
+const app = firebaseConfig
+  ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
+  : null;
+
+export const firebaseConfigured = Boolean(app);
+export const auth = app ? getAuth(app) : null;
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// Use specified custom database ID if available
-export const db: Firestore = (firebaseConfig as any).firestoreDatabaseId
-  ? getFirestore(app, (firebaseConfig as any).firestoreDatabaseId)
-  : getFirestore(app);
+export const db: Firestore | null = app
+  ? ((firebaseConfig as any).firestoreDatabaseId
+      ? getFirestore(app, (firebaseConfig as any).firestoreDatabaseId)
+      : getFirestore(app))
+  : null;
 
 // ---------------------------------------------------------------------------
 // Error Handling & Diagnosability
@@ -68,12 +80,12 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+      userId: auth?.currentUser?.uid,
+      email: auth?.currentUser?.email,
+      emailVerified: auth?.currentUser?.emailVerified,
+      isAnonymous: auth?.currentUser?.isAnonymous,
+      tenantId: auth?.currentUser?.tenantId,
+      providerInfo: auth?.currentUser?.providerData?.map(provider => ({
         providerId: provider.providerId,
         email: provider.email,
       })) || []
@@ -89,6 +101,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 // Connectivity Validation on Boot
 // ---------------------------------------------------------------------------
 export async function testConnection() {
+  if (!db) return;
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
     console.log('[Firebase]: Firestore connection verified successfully.');
@@ -106,6 +119,9 @@ testConnection();
 
 // Google Sign-In
 export async function signInWithGoogle(): Promise<User | null> {
+  if (!auth || !db) {
+    throw new Error('VITE_FIREBASE_API_KEY is not configured');
+  }
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
@@ -138,6 +154,7 @@ export async function signInWithGoogle(): Promise<User | null> {
 
 // Sign-Out
 export async function logOut(): Promise<void> {
+  if (!auth) return;
   await signOut(auth);
 }
 
@@ -149,7 +166,7 @@ export async function saveAbilityRecord(userId: string, record: {
   content?: string;
   metadata?: Record<string, any>;
 }) {
-  if (!userId) return null;
+  if (!userId || !db) return null;
   const path = `users/${userId}/abilities_history`;
   try {
     const colRef = collection(db, 'users', userId, 'abilities_history');
@@ -169,7 +186,7 @@ export async function saveChatMessage(userId: string, message: {
   text: string;
   model: string;
 }) {
-  if (!userId) return null;
+  if (!userId || !db) return null;
   const path = `users/${userId}/chat_messages`;
   try {
     const colRef = collection(db, 'users', userId, 'chat_messages');

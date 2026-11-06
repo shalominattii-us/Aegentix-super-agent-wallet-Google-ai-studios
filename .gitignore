@@ -14,6 +14,12 @@ __pycache__/
 .vscode/
 
 # Local Keys & Secrets
+# Filled env files stay local. .env.example is the empty template.
+.env
+.env.*
+!.env.example
+**/serviceAccount*.json
+**/firebase-adminsdk*.json
 .vault_key
 *.pem
 *.key

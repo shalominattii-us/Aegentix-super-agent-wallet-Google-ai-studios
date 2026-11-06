@@ -18,6 +18,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Redacted secret scan
+        run: node scripts/scan-secrets.mjs && node --test scripts/exposed-secrets.test.mjs
+
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:

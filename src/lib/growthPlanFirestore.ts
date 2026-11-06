@@ -7,6 +7,13 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
+
+function signedInFirestoreUser(): { uid: string } | null {
+  if (!auth || !db) return null;
+  const user = auth.currentUser;
+  if (!user?.uid) return null;
+  return { uid: user.uid };
+}
 import { 
   PortfolioGrowthPlan, 
   TradingCredential, 
@@ -63,8 +70,8 @@ export async function saveGrowthPlan(plan: PortfolioGrowthPlan): Promise<void> {
   }
 
   // If user is authenticated in Firebase, sync to Firestore
-  const user = auth.currentUser;
-  if (user && user.uid) {
+  const user = signedInFirestoreUser();
+  if (user && db) {
     try {
       const planDocRef = doc(db, 'users', user.uid, 'portfolio_plans', plan.id);
       await setDoc(planDocRef, {
@@ -100,8 +107,8 @@ export async function saveTradingCredential(cred: TradingCredential): Promise<vo
     console.error('LocalStorage write error for trading credential:', err);
   }
 
-  const user = auth.currentUser;
-  if (user && user.uid) {
+  const user = signedInFirestoreUser();
+  if (user && db) {
     try {
       const credDocRef = doc(db, 'users', user.uid, 'trading_credentials', cred.id);
       await setDoc(credDocRef, {
@@ -139,8 +146,8 @@ export async function saveCyberGymCredential(cred: CyberGymCredential): Promise<
     console.error('LocalStorage write error for cyber gym credential:', err);
   }
 
-  const user = auth.currentUser;
-  if (user && user.uid) {
+  const user = signedInFirestoreUser();
+  if (user && db) {
     try {
       const credDocRef = doc(db, 'users', user.uid, 'cybergym_credentials', cred.id);
       await setDoc(credDocRef, {

@@ -131,6 +131,10 @@ export const GeminiAbilitiesHub: React.FC<GeminiAbilitiesHubProps> = ({ onNotify
 
   // Auth observer
   useEffect(() => {
+    if (!auth) {
+      setIsAuthLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setIsAuthLoading(false);
@@ -140,7 +144,7 @@ export const GeminiAbilitiesHub: React.FC<GeminiAbilitiesHubProps> = ({ onNotify
 
   // Listen to user's ability history from Firestore
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUser || !db) {
       setHistoryRecords([]);
       return;
     }

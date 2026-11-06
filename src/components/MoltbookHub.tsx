@@ -535,7 +535,7 @@ export const MoltbookHub: React.FC<MoltbookHubProps> = ({ onNotify }) => {
               <div>
                 <span className="font-bold text-amber-300">Remote Posting Claim Action Required: </span>
                 <span className="text-slate-300">
-                  Moltbook requires Twitter/X human verification to post publicly to <code className="text-amber-200">https://www.moltbook.com/api/v1/posts</code> (Code: <b className="text-white">{status.verificationCode || 'ocean-UN5J'}</b>).
+                  Moltbook requires Twitter/X human verification to post publicly to <code className="text-amber-200">https://www.moltbook.com/api/v1/posts</code> {status.verificationCode ? ` (Code: ${status.verificationCode})` : ''}.
                 </span>
               </div>
             </div>
