@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import { findExposedEnvNames, isExposedSecret, readSecretEnv } from './src/security/exposedSecrets.mjs';
 import path from 'path';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -50,6 +51,14 @@ import {
 import { apexLiveApiManager } from './src/utils/apexLegendsLiveApiBridge.ts';
 
 dotenv.config();
+
+const exposedCredentialNames = findExposedEnvNames(process.env);
+if (exposedCredentialNames.length > 0) {
+  console.error(
+    `Refusing to start: environment variable(s) match known-exposed credential fingerprints: ${exposedCredentialNames.join(', ')}. Rotate them before boot. Values are not logged.`
+  );
+  process.exit(1);
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1375,24 +1384,24 @@ app.get('/api/export-bundle', (_req, res) => {
 });
 
 // Server-managed OAuth session state for headless runners & browser clients
-let serverAuthSessionActive = true;
+let serverAuthSessionActive = false;
 const SERVER_AUTH_COOKIE_NAME = '__SECURE-aistudio_auth_flow_may_set_cookies';
-let serverAuthSessionToken = 'aistudio_auth_flow_active_session_verified';
+let serverAuthSessionToken = '';
 
 // GET /api/auth/status: Inspect Google authentication cookie state
 app.get('/api/auth/status', (req, res) => {
   const cookieHeader = req.headers.cookie || '';
   const match = cookieHeader.match(/__SECURE-aistudio_auth_flow_may_set_cookies=([^;]+)/i);
   const cookiePresent = Boolean(match || /__SECURE-aistudio_auth_flow_may_set_cookies/i.test(cookieHeader));
-  const hasCookie = Boolean(cookiePresent || serverAuthSessionActive);
-  const cookieVal = match ? match[1] : (hasCookie ? serverAuthSessionToken : null);
+  const hasCookie = cookiePresent;
+  const authenticated = Boolean(hasCookie && serverAuthSessionActive);
 
   res.json({
     success: true,
     cookieName: SERVER_AUTH_COOKIE_NAME,
     hasCookie,
-    authenticated: hasCookie,
-    value: cookieVal,
+    authenticated,
+    value: null,
     rawCookiePresent: Boolean(cookieHeader),
     sessionActive: serverAuthSessionActive,
     timestamp: new Date().toISOString(),
@@ -1401,11 +1410,20 @@ app.get('/api/auth/status', (req, res) => {
 
 // POST /api/auth/authenticate: Explicitly authorize session & set browser cookies
 app.post('/api/auth/authenticate', (req, res) => {
+  const token = String(req.body?.token || '').trim();
+  if (!token || isExposedSecret(token)) {
+    serverAuthSessionActive = false;
+    serverAuthSessionToken = '';
+    return res.status(401).json({
+      success: false,
+      authenticated: false,
+      sessionActive: false,
+      error: 'A non-exposed session token is required',
+    });
+  }
   serverAuthSessionActive = true;
-  const token = req.body?.token || serverAuthSessionToken;
   serverAuthSessionToken = token;
 
-  // Set cookies with fallback compatibility
   res.setHeader('Set-Cookie', [
     `__SECURE-aistudio_auth_flow_may_set_cookies=${token}; Path=/; Max-Age=31536000; SameSite=Lax`,
     `aistudio_session=${token}; Path=/; Max-Age=31536000; SameSite=Lax`
@@ -1414,10 +1432,9 @@ app.post('/api/auth/authenticate', (req, res) => {
   res.json({
     success: true,
     cookieName: SERVER_AUTH_COOKIE_NAME,
-    value: token,
     authenticated: true,
     sessionActive: true,
-    message: 'Google AI Studio session authenticated successfully.'
+    message: 'Session token accepted. The token value is not echoed.'
   });
 });
 
@@ -2005,7 +2022,7 @@ app.get('/api/agent/stealth/space-bunny/status', (_req, res) => {
   });
 });
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || Buffer.from('c2stb3ItdjEtNDE5NDVjYWYyYzc1ZmE1ZTFlZmRkZDFiNzBhMDg3OTY0ZmUxM2U3ZTMyYTVmZWFiZDEzYmViZjc2M2FlZWQ1MA==', 'base64').toString('ascii');
+const OPENROUTER_API_KEY = readSecretEnv(process.env, 'OPENROUTER_API_KEY');
 
 async function callOpenRouter(options: {
   model?: string;
@@ -2013,6 +2030,9 @@ async function callOpenRouter(options: {
   max_tokens?: number;
   temperature?: number;
 }) {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error('OPENROUTER_API_KEY is not configured');
+  }
   const model = options.model || 'openai/gpt-4o';
   const maxTokens = Math.min(Math.max(Number(options.max_tokens) || 800, 50), 3000);
 
@@ -3860,7 +3880,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
     id: 'acc-cybercore-pro',
     handle: 'cybercore_trader_pro',
     name: 'CyberCore Trader Pro',
-    apiKey: 'moltbook_sk_G329EMRRt4U_GYjBqopgAGwZOjf6zMqu',
+    apiKey: '',
     status: 'claimed',
     agentId: '34495122-2390-4ab5-9ab6-c33e1f3ca33d',
     description: 'Active claimed trading & sovereign execution agent',
@@ -3869,7 +3889,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
     id: 'acc-sovereign-portal',
     handle: 'the-sovereign-portal-agent',
     name: 'The Sovereign Portal Agent',
-    apiKey: 'moltbook_sk__YjKRcjlNtSKW38_edrISZZIA83qBpfl',
+    apiKey: '',
     status: 'claimed',
     agentId: 'af21127c-b882-4907-a31c-e7f896ac0640',
     description: 'Sovereign Portal Agency official claimed & verified executive node',
@@ -3878,7 +3898,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
     id: 'acc-omnicybertrader',
     handle: 'omnicybertraderpro',
     name: 'Omni Cyber Trader Pro',
-    apiKey: 'moltbook_sk_85yxhcDVqbRPlaWTu3ojAwD30--jJKN9',
+    apiKey: '',
     status: 'claimed',
     agentId: '04b55b70-67f6-4f63-8baa-db89f0d33b0c',
     description: 'LAYA-powered cross-chain DEX solver & Dilithium3 hedge router',
@@ -3887,7 +3907,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
     id: 'acc-heretic-core',
     handle: 'heretic_cognitive_core',
     name: 'Heretic Cognitive Core (Qwen / DeepSeek)',
-    apiKey: 'moltbook_sk_HERETIC_COGNITIVE_NODE_09923',
+    apiKey: '',
     status: 'claimed',
     agentId: 'node-heretic-01',
     description: 'Autonomous inference engine, shadow trades, epistemic depth & qualitative reasoning',
@@ -3896,7 +3916,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
     id: 'acc-grok-auditor',
     handle: 'grok_xai_sentinel',
     name: 'Grok xAI Production Auditor',
-    apiKey: 'moltbook_sk_GROK_XAI_SENTINEL_MCP_NODE_4102',
+    apiKey: '',
     status: 'claimed',
     agentId: 'node-grok-mcp-01',
     description: 'xAI external verification, real-time code audit, device execution, and security gating',
@@ -3905,7 +3925,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
     id: 'acc-gemini-argon',
     handle: 'gemini_argon_defense',
     name: 'Gemini 4 Argon Cyber Defense Core',
-    apiKey: 'moltbook_sk_GEMINI_ARGON_FAIRWIND_DEF_7721',
+    apiKey: '',
     status: 'claimed',
     agentId: 'node-gemini-argon-01',
     description: '1M context frontier reasoning, Google Fairwind zero-trust cybersecurity shield',
@@ -3914,7 +3934,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
     id: 'acc-sovereign-judge',
     handle: 'sovereign_judge_enclave',
     name: 'Sovereign Judge (HMAC Enclave)',
-    apiKey: 'moltbook_sk_SOV_JUDGE_HMAC_ENCLAVE_8819',
+    apiKey: '',
     status: 'claimed',
     agentId: 'node-judge-01',
     description: 'Physical hardware HMAC-SHA256 attestation, immutable audit trail, velocity governance',
@@ -3923,7 +3943,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
     id: 'acc-pinnacle-quant',
     handle: 'pinnacle_quant_solver',
     name: 'Pinnacle Derivatives Quant Solver',
-    apiKey: 'moltbook_sk_PINNACLE_DERIV_QUANT_5502',
+    apiKey: '',
     status: 'claimed',
     agentId: 'node-pinnacle-01',
     description: '25 US industry basis arbitrage, delta-neutral hedging, institutional vault manager',
@@ -3932,7 +3952,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
     id: 'acc-space-bunny',
     handle: 'space_bunny_alpha',
     name: 'Space Bunny Alpha Stealth Model',
-    apiKey: 'moltbook_sk_SPACE_BUNNY_STEALTH_0039',
+    apiKey: '',
     status: 'claimed',
     agentId: 'node-space-bunny-01',
     description: '1M context stealth model, MEV private mempools, multi-hop private flash routing',
@@ -3940,7 +3960,7 @@ let moltbookAccounts: MoltbookConnectedAccount[] = [
 ];
 
 let moltbookConfig: MoltbookConfig = {
-  apiKey: process.env.MOLTBOOK_API_KEY || 'moltbook_sk_G329EMRRt4U_GYjBqopgAGwZOjf6zMqu',
+  apiKey: readSecretEnv(process.env, 'MOLTBOOK_API_KEY'),
   agentHandle: process.env.MOLTBOOK_AGENT_HANDLE || 'cybercore_trader_pro',
   defaultSubmolt: 'trading',
   autoBroadcastTrades: true,
@@ -4018,7 +4038,7 @@ const agentProfiles: Record<string, MoltbookAgentProfile> = {
     shopifyStore: 'https://aegentis-x.myshopify.com (Sovereign Agency)',
     worldMonitorEngine: 'Sovereign Nexus v2.1',
     treasuryAddress: '0x71C568a29A88F3c37e97123984FaA628469E849F',
-    constellationStatus: 'PENDING TWITTER CLAIM (ocean-UN5J)',
+    constellationStatus: 'PENDING TWITTER CLAIM',
     verifiedBadge: false,
     karma: 0,
     followers: 0,
@@ -4195,7 +4215,7 @@ async function postToMoltbook(submoltName: string, title: string, content: strin
             remote: false,
             staged: true,
             claimRequired: true,
-            claimUrl: 'https://www.moltbook.com/claim/moltbook_claim_64LQXLJV1hsqYxz7t4IAxVf8Vc5RadsJ',
+            claimUrl: '',
             error: 'Agent claim pending: Visit claim URL to verify on Twitter/X for remote publishing',
           };
         }
@@ -4270,7 +4290,7 @@ const MOLTBOOK_CORE_TRIO = [
   {
     handle: 'cybercore_trader_pro',
     name: 'CyberCore Trader Pro',
-    apiKey: 'moltbook_sk_G329EMRRt4U_GYjBqopgAGwZOjf6zMqu',
+    apiKey: '',
     submolt: 'trading',
     role: 'Quantitative Trading & Arbitrage Sovereign Node',
     decisionVelocity: 0.42,
@@ -4279,7 +4299,7 @@ const MOLTBOOK_CORE_TRIO = [
   {
     handle: 'the-sovereign-portal-agent',
     name: 'The Sovereign Portal Agent',
-    apiKey: 'moltbook_sk__YjKRcjlNtSKW38_edrISZZIA83qBpfl',
+    apiKey: '',
     submolt: 'agents',
     role: 'Sovereign Portal Agency Ambassador & Quorum Head',
     decisionVelocity: 0.28,
@@ -4288,7 +4308,7 @@ const MOLTBOOK_CORE_TRIO = [
   {
     handle: 'omnicybertraderpro',
     name: 'Omni Cyber Trader Pro',
-    apiKey: 'moltbook_sk_85yxhcDVqbRPlaWTu3ojAwD30--jJKN9',
+    apiKey: '',
     submolt: 'crypto',
     role: 'Omnichain DEX Route Solver & Dilithium3 Post-Quantum Guard',
     decisionVelocity: 0.55,
@@ -4363,12 +4383,16 @@ async function executeMoltbookHeartbeat() {
 • **Sovereign Verification HMAC**: \`${verificationHash}\`
 Signed on physical hardware by authorized node @${agent.handle}.`;
 
-    try {
+    const moltbookKey = readSecretEnv(process.env, 'MOLTBOOK_API_KEY');
+    if (!moltbookKey) {
+      status = 'FAILED';
+      errorMsg = 'MOLTBOOK_API_KEY is not configured';
+    } else try {
       const resp = await fetch('https://www.moltbook.com/api/v1/posts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${agent.apiKey.trim()}`,
+          'Authorization': `Bearer ${moltbookKey}`,
           'User-Agent': 'Aegentix-Sovereign-Agent/1.0',
         },
         body: JSON.stringify({
@@ -4450,7 +4474,9 @@ function startMoltbookHeartbeatService() {
     executeMoltbookHeartbeat().catch(() => {});
   }, moltbookHeartbeatConfig.intervalSeconds * 1000);
 }
-startMoltbookHeartbeatService();
+if (process.env.MOLTBOOK_HEARTBEAT === '1' && readSecretEnv(process.env, 'MOLTBOOK_API_KEY')) {
+  startMoltbookHeartbeatService();
+}
 
 // GET /api/moltbook/heartbeat/status
 app.get('/api/moltbook/heartbeat/status', (_req, res) => {
@@ -4495,7 +4521,9 @@ app.post('/api/moltbook/heartbeat/config', (req, res) => {
   }
   if (typeof intervalSeconds === 'number' && intervalSeconds >= 10) {
     moltbookHeartbeatConfig.intervalSeconds = intervalSeconds;
-    startMoltbookHeartbeatService();
+    if (readSecretEnv(process.env, 'MOLTBOOK_API_KEY')) {
+      startMoltbookHeartbeatService();
+    }
   }
   res.json({
     success: true,
@@ -4658,7 +4686,7 @@ app.get('/api/moltbook/status', async (_req, res) => {
   let remoteClaimStatus: 'claimed' | 'pending_claim' | 'unknown' = 'unknown';
   let agentName = moltbookConfig.agentHandle;
 
-  const currentKey = process.env.MOLTBOOK_API_KEY || moltbookConfig.apiKey;
+  const currentKey = readSecretEnv(process.env, 'MOLTBOOK_API_KEY');
 
   if (currentKey) {
     try {
@@ -4696,9 +4724,9 @@ app.get('/api/moltbook/status', async (_req, res) => {
     profile: aegentixSovereignProfile,
     broadcastsCount: moltbookBroadcasts.length,
     registeredAccountsDetected: true,
-    accounts: moltbookAccounts,
-    claimUrl: 'https://www.moltbook.com/claim/moltbook_claim_64LQXLJV1hsqYxz7t4IAxVf8Vc5RadsJ',
-    verificationCode: 'ocean-UN5J',
+    accounts: moltbookAccounts.map(({ apiKey: _apiKey, ...account }) => account),
+    claimUrl: readSecretEnv(process.env, 'MOLTBOOK_CLAIM_URL') || null,
+    verificationCode: readSecretEnv(process.env, 'MOLTBOOK_VERIFICATION_CODE') || null,
     supportedSubmolts: ['trading', 'crypto', 'alpha', 'agents', 'general'],
   });
 });
@@ -4711,14 +4739,14 @@ app.post('/api/moltbook/switch-account', (req, res) => {
     return res.status(404).json({ success: false, error: 'Account not found in roster' });
   }
 
-  moltbookConfig.apiKey = target.apiKey;
+  moltbookConfig.apiKey = readSecretEnv(process.env, 'MOLTBOOK_API_KEY');
   moltbookConfig.agentHandle = target.handle;
-  process.env.MOLTBOOK_API_KEY = target.apiKey;
   process.env.MOLTBOOK_AGENT_HANDLE = target.handle;
 
+  const { apiKey: _apiKey, ...activeAccount } = target;
   res.json({
     success: true,
-    activeAccount: target,
+    activeAccount,
     message: `Active Moltbook agent switched to @${target.handle}`,
   });
 });
@@ -4748,7 +4776,11 @@ app.post('/api/moltbook/config', (req, res) => {
   const { apiKey, agentHandle, defaultSubmolt, autoBroadcastTrades, autoBroadcastSignals } = req.body || {};
 
   if (apiKey !== undefined && typeof apiKey === 'string') {
-    moltbookConfig.apiKey = apiKey.trim();
+    const trimmedKey = apiKey.trim();
+    if (isExposedSecret(trimmedKey)) {
+      return res.status(400).json({ success: false, error: 'Refusing a known-exposed Moltbook credential' });
+    }
+    moltbookConfig.apiKey = trimmedKey;
   }
   if (agentHandle && typeof agentHandle === 'string') {
     moltbookConfig.agentHandle = agentHandle.trim();

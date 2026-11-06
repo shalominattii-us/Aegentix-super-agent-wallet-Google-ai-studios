@@ -45,8 +45,8 @@ The Xaman SDK and Trading Daemon enable autonomous swarm trading on the XRP Ledg
 Add Xaman credentials to `.env.local`:
 
 ```env
-XAMAN_API_KEY=34e7c7d2-9c94-483e-8f21-460893077075
-XAMAN_API_SECRET=bb62b56b-7082-4d9c-8be2-c3a3f45cc2e9
+XAMAN_API_KEY=
+XAMAN_API_SECRET=
 ```
 
 ### 2. Initialize Daemon

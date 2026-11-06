@@ -1,5 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { Client, Wallet, dropsToXrp, xrpToDrops } from 'xrpl';
+import { readSecretEnv } from '../security/exposedSecrets.mjs';
+
+function xamanCredentials(): { apiKey: string; apiSecret: string } {
+  return {
+    apiKey: readSecretEnv(process.env, 'XAMAN_API_KEY') || readSecretEnv(process.env, 'XUMM_API_KEY'),
+    apiSecret: readSecretEnv(process.env, 'XAMAN_API_SECRET') || readSecretEnv(process.env, 'XUMM_API_SECRET'),
+  };
+}
 
 export interface VerifiedAmmPoolConfig {
   id: string;
@@ -609,18 +617,18 @@ xrplRouter.post('/draft/offer', (req: Request, res: Response) => {
   }
 });
 
-// Official OMNICYBERDEX Xaman App Credentials
-const XAMAN_OMNICYBERDEX_API_KEY = process.env.XAMAN_API_KEY || '34e7c7d2-9c94-483e-8f21-460893077075';
-const XAMAN_OMNICYBERDEX_API_SECRET = process.env.XAMAN_API_SECRET || 'bb62b56b-7082-4d9c-8be2-c3a3f45cc2e9';
-
 xrplRouter.get('/xaman/payload/:uuid', async (req: Request, res: Response) => {
   const { uuid } = req.params;
+  const { apiKey, apiSecret } = xamanCredentials();
+  if (!apiKey || !apiSecret) {
+    return res.status(503).json({ success: false, error: 'XAMAN_API_KEY and XAMAN_API_SECRET are not configured' });
+  }
   try {
     const response = await fetch(`https://xumm.app/api/v1/platform/payload/${uuid}`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'x-api-key': XAMAN_OMNICYBERDEX_API_KEY,
-        'x-api-secret': XAMAN_OMNICYBERDEX_API_SECRET
+        'x-api-key': apiKey,
+        'x-api-secret': apiSecret
       }
     });
     if (!response.ok) {
@@ -643,6 +651,10 @@ xrplRouter.get('/xaman/payload/:uuid', async (req: Request, res: Response) => {
 });
 
 xrplRouter.post('/xaman/create-payload', async (req: Request, res: Response) => {
+  const { apiKey, apiSecret } = xamanCredentials();
+  if (!apiKey || !apiSecret) {
+    return res.status(503).json({ success: false, error: 'XAMAN_API_KEY and XAMAN_API_SECRET are not configured' });
+  }
   try {
     const { txjson, instruction } = req.body;
     if (!txjson) {
@@ -652,8 +664,8 @@ xrplRouter.post('/xaman/create-payload', async (req: Request, res: Response) => 
       method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'x-api-key': XAMAN_OMNICYBERDEX_API_KEY,
-        'x-api-secret': XAMAN_OMNICYBERDEX_API_SECRET,
+        'x-api-key': apiKey,
+        'x-api-secret': apiSecret,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

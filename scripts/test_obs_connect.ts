@@ -1,8 +1,16 @@
 import WebSocket from 'ws';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+import { readSecretEnv } from '../src/security/exposedSecrets.mjs';
+
+dotenv.config();
 
 const OBS_WS_URL = 'ws://127.0.0.1:4455';
-const OBS_PASSWORD = 'trfKcwFieW9cUE8Q2lFgtju1';
+const OBS_PASSWORD = readSecretEnv(process.env, 'OBS_WEBSOCKET_PASSWORD');
+if (!OBS_PASSWORD) {
+  console.error('OBS_WEBSOCKET_PASSWORD is not configured');
+  process.exit(1);
+}
 
 console.log('Connecting to OBS WebSocket v5 at', OBS_WS_URL, '...');
 

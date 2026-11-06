@@ -8,11 +8,15 @@ import crypto from 'crypto';
 import { exec, spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { readSecretEnv } from '../security/exposedSecrets.mjs';
 
 export const OBS_EXE_PATH = 'C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe';
 export const OBS_WORKING_DIR = 'C:\\Program Files\\obs-studio\\bin\\64bit';
 export const OBS_WS_URL = 'ws://127.0.0.1:4455';
-export const OBS_PASSWORD = 'trfKcwFieW9cUE8Q2lFgtju1';
+
+function obsPassword(): string {
+  return readSecretEnv(process.env, 'OBS_WEBSOCKET_PASSWORD');
+}
 
 export interface ObsStatusSummary {
   processRunning: boolean;
@@ -112,10 +116,18 @@ export function callObs(requestType: string, requestData: any = {}, timeoutMs = 
           let authString: string | undefined;
 
           if (authReq) {
+            const password = obsPassword();
+            if (!password) {
+              isDone = true;
+              clearTimeout(timer);
+              ws?.terminate();
+              reject(new Error('OBS_WEBSOCKET_PASSWORD is not configured'));
+              return;
+            }
             const { challenge, salt } = authReq;
             const secret = crypto
               .createHash('sha256')
-              .update(OBS_PASSWORD + salt)
+              .update(password + salt)
               .digest('base64');
             authString = crypto
               .createHash('sha256')

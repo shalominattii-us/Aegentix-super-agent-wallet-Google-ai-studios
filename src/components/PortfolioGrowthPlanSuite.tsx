@@ -127,6 +127,7 @@ export const PortfolioGrowthPlanSuite: React.FC<PortfolioGrowthPlanSuiteProps> =
 
   // Listen to Auth State
   useEffect(() => {
+    if (!auth) return;
     const unsub = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
     });
